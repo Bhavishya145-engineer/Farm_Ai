@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 # ✅ QUICK START - Your FarmAI Backend is Now Ready!
 
 ## **The Problem Was:**
@@ -104,3 +105,6 @@ Then open: **http://127.0.0.1:8000** in your browser
 - `start_farmui.bat` - Old startup script (replaced by `start_farmai.bat`)
 
 **Your backend is ready! 🚀 Start it and visit http://127.0.0.1:8000**
+=======
+# FarmAi
+>>>>>>> f850aa89a1e431d1fb395a172797f7852671521e
