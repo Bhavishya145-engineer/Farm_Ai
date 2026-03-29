@@ -685,3 +685,6 @@ def serve_fertilizer(): return FileResponse("fertilizer.html")
 
 @app.get("/chatbot.html")
 def serve_chatbot(): return FileResponse("chatbot.html")
+
+@app.get("/googlebf6a1bb40761389f.html")
+def serve_google_verification(): return FileResponse("googlebf6a1bb40761389f.html")
