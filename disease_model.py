@@ -91,6 +91,12 @@ EXPERT_KB = {
     "tomato":      [("Tomato: Late Blight",               "Apply metalaxyl fungicide. Destroy infected plants.",                          "High-Phosphorus (10-52-10)."),
                     ("Tomato: Early Blight",              "Apply chlorothalonil or mancozeb. Remove lower leaves.",                       "Calcium Nitrate."),
                     ("Tomato: Bacterial Spot",            "Apply copper bactericide. Use drip irrigation.",                               "Potassium-rich (0-0-50).")],
+    "wheat":       [("Wheat: Leaf Rust",                  "Apply triazole fungicide early. Use resistant varieties.",                     "Potassium Sulfate (0-0-50)."),
+                    ("Wheat: Powdery Mildew",             "Apply sulfur-based fungicide. Avoid dense planting.",                          "Low Nitrogen, Balanced P/K."),
+                    ("Wheat: Fusarium Head Blight",       "Apply prothioconazole. Avoid overhead irrigation during flowering.",            "Balanced NPK.")],
+    "sugarcane":   [("Sugarcane: Red Rot",                "Use disease-free setts. Apply fungicide. Remove affected clumps.",             "High-Potassium (0-0-60)."),
+                    ("Sugarcane: Smut",                   "Remove infected whips in a bag and burn them. Use resistant varieties.",       "Balanced NPK."),
+                    ("Sugarcane: Rust",                   "Apply mancozeb or propiconazole fungicide.",                                   "Calcium Nitrate.")],
 }
 
 
