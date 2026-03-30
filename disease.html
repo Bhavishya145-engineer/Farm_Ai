@@ -329,9 +329,9 @@ and
                                 class="bg-brand-500 hover:bg-brand-600 px-10 py-4 rounded-2xl text-white font-black uppercase tracking-widest transition-all shadow-xl shadow-brand-500/20 text-xs">
                                 Open Camera
                             </button>
-                            <label
+                            <label for="fileInput"
                                 class="cursor-pointer text-xs font-bold text-slate-400 hover:text-brand-500 uppercase tracking-widest">
-                                <label for="fileInput">Or Upload Photo</label>
+                                Or Upload Photo
                                 <input type="file" id="fileInput" accept="image/*" class="hidden">
                             </label>
                         </div>
@@ -349,8 +349,8 @@ and
 
                 <!-- Crop Selector -->
                 <div class="mt-4">
-                    <label class="text-xs font-bold uppercase tracking-widest text-slate-500 mb-2 block">
-                        <i class="fas fa-seedling text-brand-500 mr-1"></i> <label for="cropSelector">Select Your Crop</label> (for accurate diagnosis)
+                    <label for="cropSelector" class="text-xs font-bold uppercase tracking-widest text-slate-500 mb-2 block">
+                        <i class="fas fa-seedling text-brand-500 mr-1"></i> Select Your Crop (for accurate diagnosis)
                     </label>
                     <select id="cropSelector"
                         class="w-full px-4 py-3 rounded-2xl text-sm font-semibold text-white outline-none border border-slate-700 bg-slate-800/80 focus:border-brand-500 transition-all">
