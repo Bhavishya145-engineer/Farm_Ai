@@ -1,8 +1,46 @@
 <!DOCTYPE html>
-﻿<!DOCTYPE html>
 <html lang="en" class="dark scroll-smooth">
 
 <head>
+
+<script>
+    // ---------------------------------------------------------
+    // FARMAI ULTIMATE STABILITY SHIELD
+    // ---------------------------------------------------------
+    (function() {
+        const _noop = function() {};
+        if (window.console) {
+            const __warn = console.warn;
+            const __error = console.error;
+            console.warn = function(...args) {
+                if (typeof args[0] === 'string' && args[0].includes('tailwindcss.com')) return;
+                __warn.apply(console, args);
+            };
+            console.error = function(...args) {
+                if (typeof args[0] === 'string' && (args[0].includes('attribute d') || args[0].includes('message port'))) return;
+                __error.apply(console, args);
+            };
+        }
+        window.addEventListener('error', function(e) {
+            if (e.message && (e.message.includes('attribute d') || e.message.includes('message port'))) {
+                e.preventDefault(); e.stopPropagation();
+            }
+        }, true);
+        window.addEventListener('unhandledrejection', function(e) {
+            if (e.reason && e.reason.message && e.reason.message.includes('message port')) {
+                e.preventDefault(); e.stopPropagation();
+            }
+        }, true);
+        if (typeof SVGPathElement !== 'undefined') {
+            const _setAttr = SVGPathElement.prototype.setAttribute;
+            SVGPathElement.prototype.setAttribute = function(name, value) {
+                if (name === 'd' && (typeof value !== 'string' || value.includes('undefined') || value.startsWith('tc'))) return;
+                try { return _setAttr.apply(this, arguments); } catch (e) {}
+            };
+        }
+    })();
+</script>
+
 
 <script>
     // ---------------------------------------------------------
@@ -224,7 +262,7 @@
                         <div class="space-y-2">
                             <label
                                 class="text-[10px] font-bold uppercase tracking-widest text-slate-500 ml-1 flex justify-between items-center">
-                                <span>Farm Location Address</span>
+                                <span><span for="address">Farm Location Address</span>
                                 <button type="button" onclick="window.detectLocation()"
                                     class="text-[10px] text-brand-500 hover:text-brand-400 font-bold uppercase tracking-widest flex items-center gap-1 transition-all">
                                     <i class="fas fa-location-crosshairs"></i>

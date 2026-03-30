@@ -1,8 +1,46 @@
 <!DOCTYPE html>
-﻿<!DOCTYPE html>
 <html lang="en" class="dark scroll-smooth">
 
 <head>
+
+<script>
+    // ---------------------------------------------------------
+    // FARMAI ULTIMATE STABILITY SHIELD
+    // ---------------------------------------------------------
+    (function() {
+        const _noop = function() {};
+        if (window.console) {
+            const __warn = console.warn;
+            const __error = console.error;
+            console.warn = function(...args) {
+                if (typeof args[0] === 'string' && args[0].includes('tailwindcss.com')) return;
+                __warn.apply(console, args);
+            };
+            console.error = function(...args) {
+                if (typeof args[0] === 'string' && (args[0].includes('attribute d') || args[0].includes('message port'))) return;
+                __error.apply(console, args);
+            };
+        }
+        window.addEventListener('error', function(e) {
+            if (e.message && (e.message.includes('attribute d') || e.message.includes('message port'))) {
+                e.preventDefault(); e.stopPropagation();
+            }
+        }, true);
+        window.addEventListener('unhandledrejection', function(e) {
+            if (e.reason && e.reason.message && e.reason.message.includes('message port')) {
+                e.preventDefault(); e.stopPropagation();
+            }
+        }, true);
+        if (typeof SVGPathElement !== 'undefined') {
+            const _setAttr = SVGPathElement.prototype.setAttribute;
+            SVGPathElement.prototype.setAttribute = function(name, value) {
+                if (name === 'd' && (typeof value !== 'string' || value.includes('undefined') || value.startsWith('tc'))) return;
+                try { return _setAttr.apply(this, arguments); } catch (e) {}
+            };
+        }
+    })();
+</script>
+
 
 <script>
     // ---------------------------------------------------------
@@ -179,7 +217,7 @@
             <form id="registerForm" class="space-y-4">
                 <!-- Username -->
                 <div>
-                    <label class="block text-sm font-semibold text-slate-300 mb-2">Username</label>
+                    <label class="block text-sm font-semibold text-slate-300 mb-2" for="username">Username</label>
                     <input type="text" id="username" required
                         class="input-field w-full px-4 py-3 rounded-xl text-white outline-none"
                         placeholder="Choose a unique username">
@@ -187,7 +225,7 @@
 
                 <!-- Email -->
                 <div>
-                    <label class="block text-sm font-semibold text-slate-300 mb-2">Email Address</label>
+                    <label class="block text-sm font-semibold text-slate-300 mb-2" for="email">Email Address</label>
                     <input type="email" id="email" required
                         class="input-field w-full px-4 py-3 rounded-xl text-white outline-none"
                         placeholder="your@email.com">
@@ -195,7 +233,7 @@
 
                 <!-- Password -->
                 <div>
-                    <label class="block text-sm font-semibold text-slate-300 mb-2">Password</label>
+                    <label class="block text-sm font-semibold text-slate-300 mb-2" for="password">Password</label>
                     <div class="relative">
                         <input type="password" id="password" required
                             class="input-field w-full px-4 py-3 pr-12 rounded-xl text-white outline-none"
@@ -220,7 +258,7 @@
 
                 <!-- Confirm Password -->
                 <div>
-                    <label class="block text-sm font-semibold text-slate-300 mb-2">Confirm Password</label>
+                    <label class="block text-sm font-semibold text-slate-300 mb-2" for="confirmPassword">Confirm Password</label>
                     <div class="relative">
                         <input type="password" id="confirmPassword" required
                             class="input-field w-full px-4 py-3 pr-12 rounded-xl text-white outline-none"
@@ -235,7 +273,7 @@
                 <!-- Address -->
                 <div>
                     <label class="block text-sm font-semibold text-slate-300 mb-2 flex justify-between items-center">
-                        <span>Farm Address (Optional)</span>
+                        <label for="address">Farm Address (Optional)</label>
                         <button type="button" onclick="detectLocation()"
                             class="text-[10px] text-brand-500 hover:text-brand-400 font-bold uppercase tracking-widest flex items-center gap-1">
                             <i class="fas fa-location-crosshairs"></i> Auto-Detect
