@@ -12,12 +12,14 @@ load_dotenv()
 
 GEMINI_API_KEY      = os.getenv("GEMINI_API_KEY", "").strip()
 CROP_HEALTH_API_KEY = os.getenv("CROP_HEALTH_API_KEY", "").strip()
+GROK_API_KEY        = os.getenv("GROK_API_KEY", "").strip()
 
-# REST Endpoints (Standardized)
+# REST Endpoints (Resilient Architecture)
 GEMINI_V1BETA  = "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent"
 GEMINI_V1      = "https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent"
 KINDWISE_URL   = "https://crop.kindwise.com/api/v1/health_assessment"
 KINDWISE_ALT   = "https://crop.kindwise.com/api/v1/identification?details=health"
+GROK_URL       = "https://api.xai.com/v1/chat/completions"
 
 # ---------------------------------------------------------------
 # Expert knowledge base
@@ -88,111 +90,77 @@ def _kindwise_predict(image_bytes: bytes) -> dict:
 # Tier 2: Google Gemini (High-Level Vision)
 # ---------------------------------------------------------------
 def _gemini_predict(image_bytes: bytes, crop: str = "Plant") -> dict:
-    if not GEMINI_API_KEY: raise ValueError("AI_EMPTY")
+    if not GEMINI_API_KEY: raise ValueError("G-Missing")
     img_b64 = base64.b64encode(image_bytes).decode("utf-8")
-    prompt = f"DIAGNOSE {crop}. If fine, 'Healthy'. If sick, specific name. JSON ONLY: {{\"disease\":\"Name\",\"confidence\":0.9,\"treatment\":\"Advice\",\"fertilizer\":\"Advice\"}}"
+    prompt = f"IMAGE DIAGNOSIS: {crop}. If 100% fine, 'Healthy'. If spots/blight/rot, specific name. RETURN JSON: {{\"disease\":\"Name\",\"confidence\":0.9,\"treatment\":\"Advice\",\"fertilizer\":\"Advice\"}}"
     body = {"contents": [{"parts": [{"text": prompt}, {"inline_data": {"mime_type": "image/jpeg", "data": img_b64}}]}]}
     
-    # Try v1beta then fallback to v1
+    # Try endpoints
     resp = requests.post(f"{GEMINI_V1BETA}?key={GEMINI_API_KEY}", json=body, timeout=20)
-    if resp.status_code == 404:
-        resp = requests.post(f"{GEMINI_V1}?key={GEMINI_API_KEY}", json=body, timeout=20)
-        
+    if resp.status_code == 404: resp = requests.post(f"{GEMINI_V1}?key={GEMINI_API_KEY}", json=body, timeout=20)
     if resp.status_code != 200: raise Exception(f"G-Err:{resp.status_code}")
-    text = resp.json()["candidates"][0]["content"]["parts"][0]["text"].strip()
     
+    text = resp.json()["candidates"][0]["content"]["parts"][0]["text"].strip()
     if "```" in text: text = text.split("```")[1].replace("json","").strip()
     res = json.loads(text)
     return {
         "disease": res.get("disease", "Healthy").title(),
-        "confidence": float(res.get("confidence", 0.9)),
-        "treatment": f"{res.get('treatment', 'Advice')} [Gemini]",
-        "fertilizer": res.get("fertilizer", "NPK"), "method": "Gemini Vision AI"
+        "confidence": float(res.get("confidence", 0.90)),
+        "treatment": f"{res.get('treatment')} [Gemini-Tier]",
+        "fertilizer": res.get("fertilizer", "NPK Balanced"), "method": "Google Vision AI"
     }
 
 # ---------------------------------------------------------------
-# Tier 3: Expert Precision Fallback (Advanced Heuristics)
+# Tier 3: xAI Grok Vision (Expert Reasoning Fallback)
 # ---------------------------------------------------------------
-def _expert_fallback(image_bytes: bytes, crop: str, errors: list = None) -> dict:
-    # Status Tag: Distinguish between missing keys and service errors
-    g_s = "1" if GEMINI_API_KEY else "0"
-    k_s = "1" if CROP_HEALTH_API_KEY else "0"
-    err_str = "|".join(errors) if errors else "API_LOST"
-    diag_code = f"[AI:{g_s}{k_s}|{err_str}]"
-
-    from PIL import Image
-    import numpy as np
-    img = Image.open(io.BytesIO(image_bytes)).convert("RGB")
-    img.thumbnail((300, 300))
-    arr = np.array(img, dtype=np.float32)
-    R, G, B = arr[:,:,0], arr[:,:,1], arr[:,:,2]
-    total = R.size
+def _grok_predict(image_bytes: bytes, crop: str = "Plant") -> dict:
+    if not GROK_API_KEY: raise ValueError("X-Missing")
+    img_b64 = base64.b64encode(image_bytes).decode("utf-8")
     
-    # RELENTLESS MATURITY ANALYSIS (Maize Precision)
-    # Bright Gold harvest ears have R/G above 180 and low B.
-    is_gold = ((R > 185) & (G > 165) & (B < 125))
-    gold_pct = is_gold.sum() / total
+    # xAI uses OpenAI-Style Vision Format
+    payload = {
+        "model": "grok-1.5-vision-latest",
+        "messages": [{
+            "role": "user",
+            "content": [
+                {"type": "text", "text": f"Expert Ag-Analysis: Identify disease in {crop}. JSON ONLY: {{\"disease\":\"...\",\"confidence\":0.95,\"treatment\":\"...\",\"fertilizer\":\"...\"}}"},
+                {"type": "image_url", "image_url": {"url": f"data:image/jpeg;base64,{img_b64}"}}
+            ]
+        }]
+    }
+    headers = {"Content-Type": "application/json", "Authorization": f"Bearer {GROK_API_KEY}"}
     
-    # DISEASE Pattern Analysis (Rust/Spots)
-    # Rust is dark brown-red (G is low), whereas gold has high G.
-    is_rust = ((R > 140) & (G < 135) & (B < 95) & (R > G * 1.5))
-    rust_pct = is_rust.sum() / total
+    resp = requests.post(GROK_URL, json=payload, headers=headers, timeout=25)
+    if resp.status_code != 200: raise Exception(f"X-Err:{resp.status_code}")
     
-    is_necrosis = ((R < 70) & (G < 70) & (B < 70))
-    nec_pct = is_necrosis.sum() / total
-    
-    crop_low = (crop or "").lower()
-    is_maize = any(x in crop_low for x in ["maize", "corn"])
-
-    # --- DIAGNOSIS ---
-    # Maize Maturity Shield: GOLD > RUST = HEALTHY HARVEST
-    if is_maize and gold_pct > 0.04 and gold_pct > rust_pct:
-        return {
-            "disease": "Maize: Healthy (Mature)", "confidence": 0.99,
-            "treatment": f"Grain maturation detected (Golden hue). No severe pathology. {diag_code}",
-            "fertilizer": "Maintain moisture. Harvest ready soon.", "method": "Semantic Expert"
-        }
-
-    if rust_pct > 0.05:
-        return {
-            "disease": "Pathology: Foliar Rust", "confidence": 0.92,
-            "treatment": f"Infection detected (Rust pustules). Apply triazole fungicide. {diag_code}",
-            "fertilizer": "Check Potassium/Immunity balance.", "method": "Semantic Expert"
-        }
-
-    if nec_pct > 0.005:
-        return {
-            "disease": "Pathology: Fungal Necrosis", "confidence": 0.95,
-            "treatment": f"Tissue rot detected. Apply copper bactericide or mancozeb. {diag_code}",
-            "fertilizer": "Zinc micronutrient boost.", "method": "Semantic Expert"
-        }
-
+    raw = resp.json()["choices"][0]["message"]["content"].strip()
+    if "```" in raw: raw = raw.split("```")[1].replace("json","").strip()
+    res = json.loads(raw)
     return {
-        "disease": "Condition: Generally Healthy", "confidence": 0.85,
-        "treatment": f"Biometrics appear sanitary. No severe lesions found. {diag_code}",
-        "fertilizer": "Balanced NPK.", "method": "Semantic Expert"
+        "disease": res.get("disease", "Healthy").title(),
+        "confidence": float(res.get("confidence", 0.95)),
+        "treatment": f"{res.get('treatment')} [Grok-Tier]",
+        "fertilizer": res.get("fertilizer", "Organic Boost"), "method": "xAI Grok Vision"
     }
 
-# ---------------------------------------------------------------
-# MAIN ENTRY POINT
-# ---------------------------------------------------------------
 def predict_disease_from_image(image_bytes: bytes, crop: str = None) -> dict:
     crop_name = (crop or "").strip() or "Plant"
     err_logs = []
     
-    # Tier 1: Dedicated Crop Specialist
+    # Tier 1: Kindwise (Ag-Specialist)
     if CROP_HEALTH_API_KEY:
-        try:
-            return _kindwise_predict(image_bytes)
-        except Exception as e:
-            err_logs.append(str(e))
+        try: return _kindwise_predict(image_bytes)
+        except Exception as e: err_logs.append(str(e))
             
-    # Tier 2: AI Vision Generalist
+    # Tier 2: Gemini (Vision Specialist)
     if GEMINI_API_KEY:
-        try:
-            return _gemini_predict(image_bytes, crop_name)
-        except Exception as e:
-            err_logs.append(str(e))
+        try: return _gemini_predict(image_bytes, crop_name)
+        except Exception as e: err_logs.append(str(e))
             
-    # Tier 3: Resilient Expert Fallback
+    # Tier 3: Grok (Expert Reasoning Fallback)
+    if GROK_API_KEY:
+        try: return _grok_predict(image_bytes, crop_name)
+        except Exception as e: err_logs.append(str(e))
+            
+    # Tier 4: Resilient Semantic Fallback
     return _expert_fallback(image_bytes, crop_name, err_logs)
