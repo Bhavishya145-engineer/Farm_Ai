@@ -1,91 +1,35 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>FarmAI | Disease Detection</title>
+    <title>FarmAI | Live Diagnostic Camera</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&family=Playfair+Display:wght@700;900&display=swap" rel="stylesheet">
-
     <script>
         tailwind.config = {
             darkMode: 'class',
             theme: {
                 extend: {
-                    colors: {
-                        brand: {
-                            50: '#f0fdf4',
-                            500: '#10b981',
-                            600: '#059669',
-                        },
-                        deep: '#020617'
-                    },
-                    fontFamily: {
-                        sans: ['Outfit', 'sans-serif'],
-                        display: ['Playfair Display', 'serif'],
-                    }
+                    colors: { brand: { 50: '#f0fdf4', 500: '#10b981', 600: '#059669' }, deep: '#020617' },
+                    fontFamily: { sans: ['Outfit', 'sans-serif'], display: ['Playfair Display', 'serif'] }
                 }
             }
         }
     </script>
-
     <style>
-        .glass-card {
-            background: rgba(255, 255, 255, 0.03);
-            backdrop-filter: blur(20px);
-            border: 1px solid rgba(255, 255, 255, 0.05);
-            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
-        }
-
-        .drop-zone {
-            border: 2px dashed rgba(16, 185, 129, 0.3);
-            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-        }
-
-        .drop-zone.active {
-            border-color: #10b981;
-            background: rgba(16, 185, 129, 0.05);
-            transform: scale(1.02);
-        }
-
-        .scanner-line {
-            width: 100%;
-            height: 4px;
-            background: linear-gradient(90deg, transparent, #10b981, transparent);
-            position: absolute;
-            top: 0;
-            left: 0;
-            z-index: 30;
-            display: none;
-            animation: scan 2s linear infinite;
-            box-shadow: 0 0 15px #10b981;
-        }
-
-        @keyframes scan {
-            0% { top: 0; }
-            50% { top: 100%; }
-            100% { top: 0; }
-        }
-
-        .gradient-text-green {
-            background: linear-gradient(135deg, #10b981 0%, #34d399 100%);
-            -webkit-background-clip: text;
-            background-clip: text;
-            -webkit-text-fill-color: transparent;
-        }
+        .glass-card { background: rgba(255, 255, 255, 0.03); backdrop-filter: blur(20px); border: 1px solid rgba(255, 255, 255, 0.05); box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5); }
+        .scanner-line { width: 100%; height: 4px; background: linear-gradient(90deg, transparent, #10b981, transparent); position: absolute; top: 0; left: 0; z-index: 30; display: none; animation: scan 2s linear infinite; box-shadow: 0 0 15px #10b981; }
+        @keyframes scan { 0% { top: 0; } 50% { top: 100%; } 100% { top: 0; } }
+        .gradient-text-green { background: linear-gradient(135deg, #10b981 0%, #34d399 100%); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent; }
     </style>
 </head>
-
 <body class="text-slate-200 min-h-screen font-sans flex flex-col items-center pb-20 bg-slate-900">
 
-    <!-- Header -->
     <header class="w-full h-20 flex items-center justify-between px-8 border-b border-white/5 bg-deep/50 backdrop-blur-md sticky top-0 z-50">
         <div class="flex items-center gap-3">
-            <div class="w-10 h-10 rounded-xl bg-brand-500/10 border border-brand-500/20 flex items-center justify-center p-1.5">
-                <img src="logo/logo.png" alt="Logo" class="w-full h-full object-contain">
-            </div>
+            <div class="w-10 h-10 rounded-xl bg-brand-500/10 border border-brand-500/20 flex items-center justify-center p-1.5"><img src="logo/logo.png" alt="Logo" class="w-full h-full object-contain"></div>
             <h1 class="font-display text-xl font-bold text-white leading-none">Farm<span class="text-brand-500">AI</span></h1>
         </div>
         <div class="flex items-center gap-6">
@@ -95,136 +39,143 @@
     </header>
 
     <main class="max-w-4xl w-full px-6 mt-16 text-center">
-        <div class="mb-12">
-            <h2 class="font-display text-5xl font-extrabold text-white mb-4">Plant Health <span class="gradient-text-green">Vision</span></h2>
-            <p class="text-slate-500 text-lg max-w-2xl mx-auto">Upload a photo to identify diseases with multi-tier AI diagnostics.</p>
-        </div>
+        <h2 class="font-display text-5xl font-extrabold text-white mb-4">Live <span class="gradient-text-green">Camera</span></h2>
+        <p class="text-slate-500 text-lg mb-12">Point your camera at a crop leaf for a high-precision AI diagnosis.</p>
 
         <div class="grid md:grid-cols-2 gap-8 items-start">
-            <div class="glass-card rounded-[2.5rem] p-6 flex flex-col h-[500px]">
-                <div id="scannerContainer" class="drop-zone flex-grow relative overflow-hidden rounded-3xl">
+            <div class="glass-card rounded-[2.5rem] p-6 flex flex-col h-[520px]">
+                <div id="videoContainer" class="flex-grow relative overflow-hidden rounded-3xl bg-black border-2 border-brand-500/20">
                     <div id="scannerLine" class="scanner-line"></div>
-                    <img id="previewImage" class="hidden absolute inset-0 w-full h-full object-contain z-20">
+                    <video id="cameraFeed" class="absolute inset-0 w-full h-full object-cover" autoplay playsinline muted></video>
+                    <canvas id="photoCanvas" class="hidden"></canvas>
+                    <img id="capturedImage" class="hidden absolute inset-0 w-full h-full object-contain z-20">
                     
-                    <div id="initialOverlay" class="absolute inset-0 z-40 flex flex-col items-center justify-center bg-deep/50 backdrop-blur-sm">
-                        <div class="w-20 h-20 rounded-full bg-brand-500/10 flex items-center justify-center mb-6">
-                            <i class="fas fa-upload text-brand-500 text-3xl"></i>
-                        </div>
-                        <input type="file" id="fileInput" accept="image/*" class="hidden" onchange="handleFile(this.files[0])">
-                        <button onclick="document.getElementById('fileInput').click()" class="bg-brand-500 hover:bg-brand-600 px-10 py-4 rounded-2xl text-white font-black uppercase tracking-widest transition-all">Upload Photo</button>
+                    <div id="cameraControls" class="absolute bottom-6 inset-x-0 z-50 flex justify-center items-center gap-4">
+                        <button id="captureBtn" onclick="takeSnapshot()" class="w-16 h-16 bg-white rounded-full border-4 border-brand-500 text-brand-500 shadow-2xl flex items-center justify-center transition-transform hover:scale-110 active:scale-95"><i class="fas fa-camera text-2xl"></i></button>
+                        <button id="retakeBtn" onclick="retake()" class="hidden w-12 h-12 bg-slate-800 rounded-full border border-white/20 text-white flex items-center justify-center transition-all hover:bg-slate-700"><i class="fas fa-undo"></i></button>
                     </div>
                 </div>
-
-                <div class="mt-4">
-                    <select id="cropSelector" class="w-full px-4 py-3 rounded-2xl text-sm font-semibold text-white outline-none border border-slate-700 bg-slate-800/80 focus:border-brand-500 transition-all">
-                        <option value="">-- Auto Detect Crop --</option>
-                        <option value="maize">Maize/Corn</option>
-                        <option value="rice">Rice/Paddy</option>
-                        <option value="wheat">Wheat</option>
-                        <option value="apple">Apple</option>
-                        <option value="banana">Banana</option>
+                <div class="mt-4 flex gap-2">
+                    <select id="cropSelector" class="flex-1 px-4 py-3 rounded-2xl text-sm font-semibold text-white outline-none border border-slate-700 bg-slate-800/80 focus:border-brand-500 transition-all">
+                        <option value="">-- Auto Detect --</option>
+                        <option value="maize">Maize/Corn</option><option value="rice">Rice/Paddy</option><option value="wheat">Wheat</option>
                     </select>
+                    <button onclick="document.getElementById('fileInput').click()" class="px-4 py-3 rounded-2xl bg-slate-800 border border-slate-700 text-white hover:bg-slate-700 transition-all"><i class="fas fa-folder-open"></i></button>
+                    <input type="file" id="fileInput" accept="image/*" class="hidden" onchange="handleFile(this.files[0])">
                 </div>
             </div>
 
-            <!-- Result Section -->
-            <div class="glass-card rounded-[2.5rem] p-8 min-h-[500px] flex flex-col items-center justify-center relative overflow-hidden">
-                <div id="emptyResult" class="text-center animate-fadeIn">
-                    <div class="w-24 h-24 rounded-full bg-slate-800 flex items-center justify-center mx-auto mb-6">
-                        <i class="fas fa-microscope text-slate-600 text-4xl"></i>
-                    </div>
-                    <p class="text-slate-500 font-medium">Capture or upload an image to start the AI bio-diagnostic scan</p>
+            <div class="glass-card rounded-[2.5rem] p-8 min-h-[520px] flex flex-col items-center justify-center">
+                <div id="preScan" class="text-center">
+                    <i class="fas fa-microscope text-slate-700 text-6xl mb-6"></i>
+                    <p class="text-slate-500 font-medium max-w-[200px]">Center the leaf in the frame and press capture</p>
                 </div>
-
-                <div id="resultContent" class="hidden w-full animate-fadeIn text-left">
-                    <div class="flex items-center gap-2 mb-6">
-                        <span class="px-3 py-1 rounded-full bg-brand-500/10 border border-brand-500/20 text-brand-500 text-[10px] font-black uppercase tracking-widest">Verified Diagnosis</span>
-                    </div>
-
-                    <h3 id="diseaseName" class="text-3xl font-black text-white mb-4 leading-tight">Disease Name</h3>
-                    
+                <div id="resultContent" class="hidden w-full text-left">
+                    <span class="px-3 py-1 rounded-full bg-brand-500/10 border border-brand-500/20 text-brand-500 text-[10px] font-black uppercase tracking-widest mb-4 inline-block">Real-time Result</span>
+                    <h3 id="diseaseName" class="text-3xl font-black text-white mb-4 leading-tight">...</h3>
                     <div class="mb-8">
-                        <div class="flex justify-between text-xs font-bold uppercase tracking-widest text-slate-400 mb-2">
-                            <span>Diagnostic Confidence</span>
-                            <span id="confidenceValue">0%</span>
-                        </div>
-                        <div class="h-2 w-full bg-slate-800 rounded-full overflow-hidden">
-                            <div id="confidenceBar" class="h-full bg-brand-500 transition-all duration-1000" style="width: 0%"></div>
-                        </div>
+                        <div class="flex justify-between text-[10px] font-black uppercase tracking-tighter text-slate-500 mb-2"><span>AI Confidence</span><span id="confVal">0%</span></div>
+                        <div class="h-1.5 w-full bg-slate-800 rounded-full overflow-hidden"><div id="confBar" class="h-full bg-brand-500 transition-all duration-1000" style="width: 0%"></div></div>
                     </div>
-
-                    <div class="p-6 rounded-3xl bg-white/5 border border-white/5 mb-8">
-                        <h4 class="text-xs font-black text-brand-500 uppercase tracking-widest mb-3">Counter-Measure</h4>
-                        <p id="treatmentText" class="text-sm text-slate-300 leading-relaxed italic">Treatment instructions...</p>
+                    <div class="p-5 rounded-3xl bg-white/5 border border-white/5 mb-8">
+                        <h4 class="text-[10px] font-black text-brand-500 uppercase tracking-widest mb-2">Methodology</h4>
+                        <p id="methodText" class="text-xs text-slate-500 mb-3 italic">...</p>
+                        <h4 class="text-[10px] font-black text-brand-500 uppercase tracking-widest mb-2">Treatment Plan</h4>
+                        <p id="treatmentText" class="text-sm text-slate-300 leading-relaxed italic">...</p>
                     </div>
-
-                    <div class="flex gap-3">
-                        <button class="flex-1 py-3 rounded-2xl bg-white/5 border border-white/10 text-xs font-bold hover:bg-brand-500 transition-all" onclick="location.reload()">New Scan</button>
-                    </div>
+                    <button onclick="retake()" class="w-full py-4 rounded-2xl bg-brand-500 text-white font-black uppercase tracking-widest shadow-xl shadow-brand-500/20 hover:bg-brand-600 transition-all">New Scan</button>
                 </div>
             </div>
         </div>
     </main>
 
     <script>
-        const previewImage = document.getElementById('previewImage');
-        const initialOverlay = document.getElementById('initialOverlay');
+        const video = document.getElementById('cameraFeed');
+        const capturedImg = document.getElementById('capturedImage');
         const scannerLine = document.getElementById('scannerLine');
-        const emptyResult = document.getElementById('emptyResult');
+        const preScan = document.getElementById('preScan');
         const resultContent = document.getElementById('resultContent');
 
+        async function initCamera() {
+            try {
+                const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } });
+                video.srcObject = stream;
+            } catch (err) { alert("Camera Error: Please ensure you have granted camera permissions."); }
+        }
+        initCamera();
+
+        function takeSnapshot() {
+            const canvas = document.getElementById('photoCanvas');
+            canvas.width = video.videoWidth;
+            canvas.height = video.videoHeight;
+            canvas.getContext('2d').drawImage(video, 0, 0);
+            const dataUrl = canvas.toDataURL('image/jpeg');
+            capturedImg.src = dataUrl;
+            capturedImg.classList.remove('hidden');
+            video.classList.add('hidden');
+            document.getElementById('captureBtn').classList.add('hidden');
+            document.getElementById('retakeBtn').classList.remove('hidden');
+            
+            canvas.toBlob(blob => analyzeImage(blob), 'image/jpeg');
+        }
+
         function handleFile(file) {
-            if (!file) return;
+            if(!file) return;
             const reader = new FileReader();
             reader.onload = (e) => {
-                previewImage.src = e.target.result;
-                previewImage.classList.remove('hidden');
-                initialOverlay.classList.add('hidden');
+                capturedImg.src = e.target.result;
+                capturedImg.classList.remove('hidden');
+                video.classList.add('hidden');
+                document.getElementById('captureBtn').classList.add('hidden');
+                document.getElementById('retakeBtn').classList.remove('hidden');
                 analyzeImage(file);
             };
             reader.readAsDataURL(file);
         }
 
-        async function analyzeImage(file) {
+        async function analyzeImage(blob) {
             const token = localStorage.getItem('token');
             scannerLine.style.display = 'block';
-            emptyResult.classList.add('hidden');
+            preScan.classList.add('hidden');
             resultContent.classList.add('hidden');
 
-            const formData = new FormData();
-            formData.append('file', file);
+            const fd = new FormData();
+            fd.append('file', blob);
             const crop = document.getElementById('cropSelector').value;
-            if (crop) formData.append('crop', crop);
+            if(crop) fd.append('crop', crop);
 
             try {
                 const res = await fetch('/predict-disease', {
                     method: 'POST',
                     headers: { 'Authorization': `Bearer ${token}` },
-                    body: formData,
+                    body: fd,
                     cache: 'no-store'
                 });
-                
                 const data = await res.json();
-                
                 setTimeout(() => {
                     scannerLine.style.display = 'none';
                     displayResult(data);
                 }, 1500);
-            } catch (err) {
-                alert("Scan failed. Engine unreachable.");
-                scannerLine.style.display = 'none';
-                emptyResult.classList.remove('hidden');
-            }
+            } catch (err) { alert("Engine unreachable. Check connection."); scannerLine.style.display = 'none'; }
         }
 
         function displayResult(data) {
-            if (data.error) { alert(data.error); return; }
             resultContent.classList.remove('hidden');
             document.getElementById('diseaseName').textContent = data.disease;
             document.getElementById('treatmentText').textContent = data.treatment;
+            document.getElementById('methodText').textContent = data.method;
             const conf = (data.confidence * 100);
-            document.getElementById('confidenceValue').textContent = conf.toFixed(1) + '%';
-            document.getElementById('confidenceBar').style.width = conf + '%';
+            document.getElementById('confVal').textContent = conf.toFixed(1) + '%';
+            setTimeout(() => document.getElementById('confBar').style.width = conf + '%', 100);
+        }
+
+        function retake() {
+            capturedImg.classList.add('hidden');
+            video.classList.remove('hidden');
+            document.getElementById('captureBtn').classList.remove('hidden');
+            document.getElementById('retakeBtn').classList.add('hidden');
+            resultContent.classList.add('hidden');
+            preScan.classList.remove('hidden');
         }
     </script>
 </body>
