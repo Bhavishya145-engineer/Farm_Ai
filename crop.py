@@ -590,6 +590,10 @@ ABOUT FARMAI:
 
 You also help farmers with crop selection, disease treatment, fertilizer advice,
 irrigation, pest control, harvesting tips, and any agriculture-related knowledge.
+
+CRITICAL FIELD ENFORCEMENT:
+If the user's question, uploaded text document, or uploaded image is NOT related to agriculture, farming, crops, soil, plants, or botany, you MUST refuse to answer or analyze it. You MUST explicitly reply with exactly: "The file is not related to the chatbot field." and say nothing else.
+
 Be friendly, concise, practical. DO NOT cut off lists. If asked to list crops, list all 101 crops entirely without summarizing or stopping early."""
 
 @app.post("/chat")
@@ -641,7 +645,9 @@ async def chat_file(
         prompt = f"""{SYSTEM_PROMPT}
 
 User uploaded an image and asks: "{message}"
-Analyze the image from an agricultural perspective. Identify:
+First, verify if this image is related to agriculture, farming, crops, soil, or plants.
+If it is NOT related, you MUST reply with exactly: "The file is not related to the chatbot field."
+If it IS related, analyze the image from an agricultural perspective. Identify:
 - What crop or plant is shown
 - Any visible diseases, pests, or deficiencies
 - Health status

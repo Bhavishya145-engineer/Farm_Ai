@@ -116,12 +116,17 @@
   </div>
 
   <!-- Input -->
-  <div class="bot-input-row">
-    <textarea id="bot-input" class="bot-input" rows="1" placeholder="Ask about crops, diseases, fertilizers..."
+  <div class="bot-input-row" style="position:relative; flex-wrap:wrap;">
+    <label for="bot-file" style="cursor:pointer; color:#94a3b8; font-size:16px; padding:8px 8px 8px 4px; transition:color 0.2s;" title="Upload Image or Document" onmouseover="this.style.color='#10b981'" onmouseout="this.style.color='#94a3b8'">
+      <i class="fas fa-paperclip"></i>
+    </label>
+    <input type="file" id="bot-file" accept="image/*,.pdf,.txt,.csv" style="display:none;" onchange="handleFileSelect(event)">
+    <textarea id="bot-input" class="bot-input" rows="1" placeholder="Ask about crops, diseases... or attach file"
       onkeydown="handleKey(event)" oninput="autoResize(this)"></textarea>
     <button class="bot-send" id="bot-send-btn" onclick="sendMessage()">
       <i class="fas fa-paper-plane" style="font-size:14px;"></i>
     </button>
+    <div id="file-preview" style="display:none; width:100%; font-size:10px; color:#10b981; margin-top:6px; font-weight:bold;"><i class="fas fa-file-alt"></i> <span id="file-name" style="margin-left:4px;"></span><button onclick="clearFile()" style="margin-left:8px; background:none; border:none; color:#ef4444; cursor:pointer;" title="Remove attachment"><i class="fas fa-times"></i></button></div>
   </div>
 </div>
 
@@ -129,6 +134,23 @@
   let botOpen = false;
   let chatHistory = [];
   let isTyping = false;
+  let selectedFile = null;
+
+  function handleFileSelect(e) {
+    if(e.target.files.length > 0) {
+      selectedFile = e.target.files[0];
+      document.getElementById('file-name').innerText = selectedFile.name;
+      document.getElementById('file-preview').style.display = 'block';
+      document.getElementById('bot-input').placeholder = "Ask a question about this file...";
+    }
+  }
+
+  function clearFile() {
+    selectedFile = null;
+    document.getElementById('bot-file').value = '';
+    document.getElementById('file-preview').style.display = 'none';
+    document.getElementById('bot-input').placeholder = "Ask about crops, diseases... or attach file";
+  }
 
   function toggleBot() {
     botOpen = !botOpen;
@@ -165,8 +187,8 @@
 
   async function sendMessage() {
     const input = document.getElementById('bot-input');
-    const text = input.value.trim();
-    if (!text || isTyping) return;
+    const text = input.value.trim() || (selectedFile ? 'Analyze this file' : '');
+    if (!text && !selectedFile) return;
 
     input.value = '';
     input.style.height = 'auto';
@@ -174,18 +196,35 @@
     document.getElementById('bot-send-btn').disabled = true;
     document.getElementById('quick-chips').style.display = 'none';
 
-    appendMsg(text, 'user');
-    chatHistory.push({ role: 'user', content: text });
+    let msgContent = text;
+    if (selectedFile) msgContent += ` <br><span class="chip" style="font-size:9px; padding:2px 6px;">📄 ${selectedFile.name}</span>`;
+    appendMsg(msgContent, 'user');
 
     // Typing indicator
-    const typingDiv = appendMsg('Thinking...', 'typing');
+    const typingDiv = appendMsg('Analyzing...', 'typing');
 
     try {
-      const res = await fetch('/chat', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ message: text, history: chatHistory.slice(-6) })
-      });
+      let res;
+      if (selectedFile) {
+        const formData = new FormData();
+        formData.append('file', selectedFile);
+        formData.append('message', text);
+        
+        chatHistory.push({ role: 'user', content: `[User attached file: ${selectedFile.name}] ${text}` });
+
+        res = await fetch('/chat-file', {
+          method: 'POST',
+          body: formData
+        });
+      } else {
+        chatHistory.push({ role: 'user', content: text });
+        res = await fetch('/chat', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ message: text, history: chatHistory.slice(-6) })
+        });
+      }
+
       const data = await res.json();
       typingDiv.remove();
       const reply = data.reply || 'Sorry, I could not get a response.';
@@ -196,6 +235,7 @@
       appendMsg('Connection error. Please check if the server is running.', 'bot');
     }
 
+    clearFile();
     isTyping = false;
     document.getElementById('bot-send-btn').disabled = false;
     input.focus();
