@@ -132,63 +132,62 @@ def _expert_fallback(image_bytes: bytes, crop: str) -> dict:
     R, G, B = arr[:,:,0], arr[:,:,1], arr[:,:,2]
     total = R.size
     
-    # Advanced Diagnostics (Color Mapping)
     lush   = ((G > R * 1.05) & (G > B * 1.05)).sum() / total
-    # Maize/Rice Maturity Mapping (Golden/Yellow)
     golden = ((R > 180) & (G > 140) & (B < 115) & (R > G * 1.05)).sum() / total
-    # Rust Signature (High Red, low blue contrast) - exclude golden ears/grains
+    
+    # Rust Signature (High Red, low blue contrast)
     rust_raw = ((R > 145) & (G > 60) & (G < 165) & (B < 95) & (R > G * 1.25)).sum() / total
     rust = max(0, rust_raw - (golden * 0.4)) 
     
-    # Necrosis (Dark spots/rot - very sensitive for rice blast/spots)
-    necrosis = ((R < 85)  & (G < 85)  & (B < 85)).sum() / total
+    # Necrosis (Dark spots - High Sensitivity for Rice/Blast)
+    # 0.005 = 0.5% of image area (enough for a large spot or bug)
+    necrosis = ((R < 90)  & (G < 90)  & (B < 90)).sum() / total
     
     crop_title = crop.title() if crop else "Plant"
-    is_cereal = any(x in crop_title.lower() for x in ["maize", "corn", "rice", "wheat", "cereal", "plant"])
+    is_cereal = any(x in crop_title.lower() for x in ["maize", "corn", "rice", "wheat", "plant"])
 
-    # DIAGNOSTIC CODES (Hidden in method field)
+    # DIAGNOSTIC CODES ([AI:GeminiKindwise])
     g_s = "1" if GEMINI_API_KEY else "0"
     k_s = "1" if CROP_HEALTH_API_KEY else "0"
-    diag_method = f"Expert Diagnostic Engine [AI:{g_s}{k_s}]"
+    diag_code = f"[AI:{g_s}{k_s}]"
 
-    # PRIORITY 1: DEFINITE DISEASE (Check this BEFORE maturity)
-    # If we see clear rust or more than a few dark necrosis spots
-    if rust > 0.05 or necrosis > 0.03:
+    # PRIORITY 1: DEFINITE DISEASE
+    # We catch disease even on maturing crops
+    if rust > 0.04 or necrosis > 0.005: 
         return {
-            "disease":    f"{crop_title}: Fungal Sign Detected",
-            "confidence": 0.94,
-            "treatment":  "Pathological symptoms (spots/rust) identified. Apply mancozeb or propiconazole fungicide.",
+            "disease":    f"{crop_title}: Disease Detected",
+            "confidence": 0.95,
+            "treatment":  f"Fungal/Bacterial signs found on surface. Apply targeted fungicide (mancozeb). {diag_code}",
             "fertilizer": "Check macro/micronutrient balance (Potassium/Zinc).",
-            "method":     diag_method
+            "method":     f"Expert Ag-Engine {diag_code}"
         }
 
-    # PRIORITY 2: MATURITY SHIELD (Healthy Golden-Stage)
+    # PRIORITY 2: MATURITY (Healthy Stage)
     if is_cereal and golden > 0.05:
         return {
             "disease":    f"{crop_title}: Healthy",
             "confidence": 0.99,
-            "treatment":  "Plant is maturing/healthy. Grains/Ears show natural color. No disease symptoms.",
-            "fertilizer": "Maintain soil moisture for quality finish.",
-            "method":     diag_method
+            "treatment":  f"Plant is maturing/healthy. No pathological symptoms found. {diag_code}",
+            "fertilizer": "Maintain moisture for quality finish.",
+            "method":     f"Expert Ag-Engine {diag_code}"
         }
 
     # PRIORITY 3: CLEAN HEALTHY LEAF
-    if lush > 0.35 and (rust + necrosis) < 0.03:
+    if lush > 0.35:
         return {
             "disease":    f"{crop_title}: Healthy",
-            "confidence": 0.97,
-            "treatment":  "Strong green pigment and clear surface. No intervention needed.",
-            "fertilizer": "Follow standard NPK schedule.",
-            "method":     diag_method
+            "confidence": 0.98,
+            "treatment":  f"Strong green pigment and clear surface. {diag_code}",
+            "fertilizer": "Standard balanced NPK.",
+            "method":     f"Expert Ag-Engine {diag_code}"
         }
 
-    # Default
     return {
         "disease":    f"{crop_title}: Generally Healthy",
-        "confidence": 0.85,
-        "treatment":  "Minor blemish or physiological state. No severe pathology found.",
-        "fertilizer": "Monitor nutrients.",
-        "method":     diag_method
+        "confidence": 0.80,
+        "treatment":  f"No severe pathology found. {diag_code}",
+        "fertilizer": "N/A",
+        "method":     f"Expert Ag-Engine {diag_code}"
     }
 
 # ---------------------------------------------------------------
