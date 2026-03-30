@@ -4,34 +4,45 @@ and
 
 <head>
 
-  <script>
-    // Suppress Tailwind Play CDN production warning
-    if (window.console && console.warn) {
-      const origWarn = console.warn;
-      console.warn = function(...args) {
-        if (args[0] && typeof args[0] === 'string' && args[0].includes('tailwindcss.com should not be used in production')) return;
-        origWarn.apply(console, args);
-      };
-    }
-    
-    // Defensive wrapper for SVG path errors caused by third-party scripts/extensions
+<script>
+    // ---------------------------------------------------------
+    // FARMAI STABILITY SHIELD & CONSOLE CLEANER
+    // ---------------------------------------------------------
     (function() {
-      const origSetAttr = SVGPathElement.prototype.setAttribute;
-      SVGPathElement.prototype.setAttribute = function(name, value) {
-        if (name === 'd' && typeof value === 'string' && value.includes('undefined')) return;
-        // Fix for specific malformed path error seen in logs
-        if (name === 'd' && typeof value === 'string' && value.startsWith('tc')) {
-          console.debug('Prevented malformed SVG path from extension conflict');
-          return;
-        }
-        try {
-          return origSetAttr.apply(this, arguments);
-        } catch (e) {
-          console.debug('Ignored SVG attribute error:', e);
-        }
-      };
+        // 1. Aggressive Console Cleaner (Kills annoying warnings from CDNs like Tailwind Play)
+        const __warn = console.warn;
+        const __error = console.error;
+        console.warn = function(...args) {
+            if (typeof args[0] === 'string' && args[0].includes('tailwindcss.com')) return;
+            __warn.apply(console, args);
+        };
+        console.error = function(...args) {
+            // Block the known SVG/Extension error stack from appearing
+            if (typeof args[0] === 'string' && (args[0].includes('attribute d') || args[0].includes('message port'))) return;
+            __error.apply(console, args);
+        };
+
+        // 2. Global Error Silencer for third-party extensions (like translators or floater buttons)
+        window.addEventListener('error', function(e) {
+            if (e.message && (e.message.includes('attribute d') || e.message.includes('message port'))) {
+                e.preventDefault();
+                e.stopPropagation();
+            }
+        }, true);
+
+        // 3. SVG Protection (Defensive polyfill against malformed extension injections)
+        const origSetAttr = SVGPathElement.prototype.setAttribute;
+        SVGPathElement.prototype.setAttribute = function(name, value) {
+            if (name === 'd' && (typeof value !== 'string' || value.includes('undefined') || value.startsWith('tc'))) {
+                return; 
+            }
+            try { return origSetAttr.apply(this, arguments); } catch (e) {}
+        };
     })();
-  </script>
+</script>
+
+
+  
 
     <!-- Google Tag Manager -->
 <script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
