@@ -116,54 +116,79 @@ def _gemini_predict(image_bytes: bytes, crop: str = "Plant") -> dict:
     }
 
 # ---------------------------------------------------------------
-# Tier 3: Expert Precision Fallback (Last Resort)
+# Tier 3: Expert Precision Fallback (Advanced Heuristics)
 # ---------------------------------------------------------------
 def _expert_fallback(image_bytes: bytes, crop: str) -> dict:
     from PIL import Image
     import numpy as np
     img = Image.open(io.BytesIO(image_bytes)).convert("RGB")
-    img.thumbnail((150, 150))
+    img.thumbnail((180, 180)) # Slightly higher res for analysis
     arr = np.array(img, dtype=np.float32)
     R, G, B = arr[:,:,0], arr[:,:,1], arr[:,:,2]
     total = R.size
     
-    # Advanced Pixel Check
-    # Lush Green (Healthy)
-    lush = ((G > R * 1.05) & (G > B * 1.05)).sum() / total
-    # Rust/Orange Dots (Diseased)
-    rust = ((R > 140) & (G > 60) & (G < 170) & (B < 100) & (R > G * 1.2)).sum() / total
-    # Necrotic Spots (Diseased)
-    necrosis = ((R < 70) & (G < 70) & (B < 70)).sum() / total
+    # 1. Healthy Foliage (Chlorophyll saturation)
+    lush = ((G > R * 1.03) & (G > B * 1.03)).sum() / total
+    
+    # 2. Maize/Corn Maturity Awareness (Golden Yellow)
+    # We detect these to avoid false-positive rust reports
+    golden = ((R > 180) & (G > 140) & (B < 110) & (R > G * 1.05)).sum() / total
+    
+    # 3. Disease Signatures
+    # Rust (High Red/Low Blue contrast)
+    # Subtracting golden context to ensure maize ears aren't flagged
+    rust_raw = ((R > 140) & (G > 60) & (G < 165) & (B < 95) & (R > G * 1.15)).sum() / total
+    rust = max(0, rust_raw - (golden * 0.4)) 
+    
+    # Necrosis/Spots (Dark brown/black)
+    necrosis = ((R < 80) & (G < 80) & (B < 80)).sum() / total
     
     crop_title = crop.title() if crop else "Plant"
-    
-    # If the image is dominated by lush green and has almost zero anomaly
-    if lush > 0.40 and (rust + necrosis) < 0.04:
+    is_maize = crop.lower() in ["maize", "corn", "plant"]
+
+    # DIAGNOSTIC LOGGING (Hidden in the 'method' field)
+    g_stat = "1" if GEMINI_API_KEY else "0"
+    k_stat = "1" if CROP_HEALTH_API_KEY else "0"
+    diag = f"P-Fallback (S:{lush:.1f}|R:{rust:.1f}|G:{golden:.1f}) [AI:{g_stat}{k_stat}]"
+
+    # PRECISION LOGIC
+    # Case A: Mature maize/corn field (Gold ears + Green leaves)
+    if is_maize and golden > 0.05 and rust < 0.08:
         return {
             "disease":    f"{crop_title}: Healthy",
-            "confidence": 0.95,
-            "treatment":  "Plant is looking great! No treatment needed.",
-            "fertilizer": "Maintain regular fertilization.",
-            "method":     "Precision Color Fallback (T3-Healthy)"
-        }
-    
-    # If we see CLEAR rust or spots
-    if rust > 0.05 or necrosis > 0.06:
-        return {
-            "disease":    f"{crop_title}: Fungal Spot Detected",
-            "confidence": 0.82,
-            "treatment":  "Visible symptoms found. Apply mancozeb fungicide immediately.",
-            "fertilizer": "Soil micro-nutrient boost recommended.",
-            "method":     "Precision Anomaly Fallback (T3-Diagnostic)"
+            "confidence": 0.98,
+            "treatment":  "Plant is in harvestable/optimal health. No fungal signs detected.",
+            "fertilizer": "Maintain soil moisture for grain filling.",
+            "method":     diag
         }
 
-    # Generic Fallback
+    # Case B: Clean Healthy foilage
+    if lush > 0.35 and (rust + necrosis) < 0.05:
+        return {
+            "disease":    f"{crop_title}: Healthy",
+            "confidence": 0.96,
+            "treatment":  "Plant appears perfectly healthy. Continue standard monitoring.",
+            "fertilizer": "Balanced NPK (15-15-15).",
+            "method":     diag
+        }
+    
+    # Case C: Clear Fungal Signature (Rust/Spot)
+    if rust > 0.04 or necrosis > 0.08:
+        return {
+            "disease":    f"{crop_title}: Fungal Spot Detected",
+            "confidence": 0.88,
+            "treatment":  "Visible symptoms found. Apply broad-spectrum fungicide (mancozeb) or neem oil.",
+            "fertilizer": "Soil micronutrient boost (Zinc/Boron).",
+            "method":     diag
+        }
+
+    # Default
     return {
-        "disease":    f"{crop_title}: Unknown / Healthy",
-        "confidence": 0.70,
-        "treatment":  "No clear disease pattern. Observe for 24h.",
-        "fertilizer": "N/A",
-        "method":     "Heuristic Fallback (T3)"
+        "disease":    f"{crop_title}: Generally Healthy",
+        "confidence": 0.75,
+        "treatment":  "No severe disease symptoms detected. Minor blemishes may be physiological.",
+        "fertilizer": "Standard balanced nutrition.",
+        "method":     diag
     }
 
 # ---------------------------------------------------------------
