@@ -444,10 +444,10 @@
     function updateProfile(type) {
       if (type === 'custom') return;
       const p = profiles[type];
-      document.getElementById('nitrogen').value = p.n;
-      document.getElementById('phosphorus').value = p.p;
-      document.getElementById('potassium').value = p.k;
-      document.getElementById('ph').value = p.ph;
+      document.getElementById('nitrogen_val').value = p.n;
+      document.getElementById('phosphorus_val').value = p.p;
+      document.getElementById('potassium_val').value = p.k;
+      document.getElementById('ph_val').value = p.ph;
     }
 
     // Theme Management
@@ -493,14 +493,14 @@
             const avgTemp = climateData.daily.temperature_2m_mean.reduce((a, b) => a + b, 0) / climateData.daily.temperature_2m_mean.length;
             const totalRain = climateData.daily.precipitation_sum.reduce((a, b) => a + b, 0);
 
-            document.getElementById('temperature').value = avgTemp.toFixed(1);
-            document.getElementById('rainfall').value = totalRain.toFixed(1);
+            document.getElementById('temperature_val').value = avgTemp.toFixed(1);
+            document.getElementById('rainfall_val').value = totalRain.toFixed(1);
 
             // 3. Current Humidity
             const humRes = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${latitude}&longitude=${longitude}&current=relative_humidity_2m`);
             const humData = await humRes.json();
             if (humData.current) {
-              document.getElementById('humidity').value = humData.current.relative_humidity_2m;
+              document.getElementById('humidity_val').value = humData.current.relative_humidity_2m;
             }
 
             status.textContent = `📍 Success: ${city} (Data Sync Complete)`;
@@ -554,14 +554,14 @@
             // Calculate Total Annual Rainfall
             const totalRain = data.daily.precipitation_sum.reduce((a, b) => a + b, 0);
 
-            document.getElementById('temperature').value = avgTemp.toFixed(1);
-            document.getElementById('rainfall').value = totalRain.toFixed(1);
+            document.getElementById('temperature_val').value = avgTemp.toFixed(1);
+            document.getElementById('rainfall_val').value = totalRain.toFixed(1);
 
             // Also update humidity if possible (Forecast API is better for real-time humidity)
             const forecastRes = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${latitude}&longitude=${longitude}&current=relative_humidity_2m`);
             const forecastData = await forecastRes.json();
             if (forecastData.current) {
-              document.getElementById('humidity').value = forecastData.current.relative_humidity_2m;
+              document.getElementById('humidity_val').value = forecastData.current.relative_humidity_2m;
             }
           }
         } catch (e) {
@@ -590,13 +590,13 @@
       app.loading = true;
 
       const data = {
-        nitrogen: Number(document.getElementById('nitrogen').value),
-        phosphorus: Number(document.getElementById('phosphorus').value),
-        potassium: Number(document.getElementById('potassium').value),
-        temperature: Number(document.getElementById('temperature').value),
-        humidity: Number(document.getElementById('humidity').value),
-        ph: Number(document.getElementById('ph').value),
-        rainfall: Number(document.getElementById('rainfall').value),
+        nitrogen: Number(document.getElementById('nitrogen_val').value),
+        phosphorus: Number(document.getElementById('phosphorus_val').value),
+        potassium: Number(document.getElementById('potassium_val').value),
+        temperature: Number(document.getElementById('temperature_val').value),
+        humidity: Number(document.getElementById('humidity_val').value),
+        ph: Number(document.getElementById('ph_val').value),
+        rainfall: Number(document.getElementById('rainfall_val').value),
         soil_type: document.getElementById('soilType').value
       };
 
