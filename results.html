@@ -748,8 +748,7 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
         var m = document.getElementById('farmbot-msgs');
         var d = document.createElement('div');
         d.className = 'bmsg ' + role;
-        d.innerHTML = txt.replace(/
-/g, '<br>').replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+        d.innerHTML = txt.replace(/\n/g, '<br>').replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
         m.appendChild(d); m.scrollTop = m.scrollHeight; return d;
       }
       window.farmBotSend = async function () {

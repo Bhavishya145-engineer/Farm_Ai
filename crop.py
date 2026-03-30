@@ -710,34 +710,6 @@ Be specific and practical."""
     except Exception as e:
         return {"reply": f"Analysis failed: {str(e)[:80]}"}
 
-    try:
-        resp = http_requests.post(
-            "https://api.groq.com/openai/v1/chat/completions",
-            headers={
-                "Authorization": f"Bearer {GROK_API_KEY}",
-                "Content-Type": "application/json"
-            },
-            json={
-                "model": "llama-3.3-70b-versatile",
-                "messages": messages,
-                "max_tokens": 1500,
-                "temperature": 0.7
-            },
-            timeout=20
-        )
-        if resp.status_code == 400:
-            err = resp.json().get("error", {})
-            return {"reply": f"API Error: {err.get('message', 'Bad request. Check your API key.')}"}
-        if resp.status_code == 401:
-            return {"reply": "Invalid API key. Please update GROK_API_KEY in your .env file."}
-        resp.raise_for_status()
-        reply = resp.json()["choices"][0]["message"]["content"]
-        return {"reply": reply}
-    except http_requests.exceptions.Timeout:
-        return {"reply": "Sorry, the response took too long. Please try again."}
-    except Exception as e:
-        return {"reply": f"Sorry, I'm having trouble connecting. Please try again. ({str(e)[:80]})"}
-
 
 # ----------------------------------------
 # HTML SERVING
