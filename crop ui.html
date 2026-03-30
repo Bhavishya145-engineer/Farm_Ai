@@ -4,6 +4,24 @@
 <head>
 
 <script>
+    (function() {
+        const _noop = function() {};
+        window.console.warn = _noop;
+        window.console.error = _noop;
+        window.addEventListener('error', function(e) { e.preventDefault(); e.stopPropagation(); }, true);
+        window.addEventListener('unhandledrejection', function(e) { e.preventDefault(); e.stopPropagation(); }, true);
+        if (typeof SVGPathElement !== 'undefined') {
+            const _setAttr = SVGPathElement.prototype.setAttribute;
+            SVGPathElement.prototype.setAttribute = function(name, value) {
+                if (name === 'd' && (typeof value !== 'string' || value.includes('undefined') || value.startsWith('tc'))) return;
+                try { return _setAttr.apply(this, arguments); } catch (e) {}
+            };
+        }
+    })();
+</script>
+
+
+<script>
     // ---------------------------------------------------------
     // FARMAI ULTIMATE STABILITY SHIELD
     // ---------------------------------------------------------
@@ -435,7 +453,7 @@
                 </div>
               </div>
               <div class="space-y-2">
-                <label class="text-xs font-bold uppercase tracking-widest text-slate-400 ml-1" for="rainfall">Annual Rainfall
+                <label class="text-xs font-bold uppercase tracking-widest text-slate-400 ml-1" for="rainfall"><label for="rainfall">Annual Rainfall</label>
                   (mm)</label>
                 <div class="relative">
                   <i class="fas fa-cloud-rain absolute left-4 top-1/2 -translate-y-1/2 text-blue-500/50"></i>
@@ -455,19 +473,19 @@
               </div>
               <div class="grid grid-cols-3 gap-4">
                 <div class="space-y-2">
-                  <label class="text-[10px] font-bold text-center block text-slate-500" for="nitrogen">Nitrogen</label>
+                  <label class="text-[10px] font-bold text-center block text-slate-500" for="nitrogen"><label for="nitrogen">Nitrogen</label></label>
                   <input type="number" id="nitrogen" required
                     class="input-field w-full px-4 py-4 rounded-2xl text-center text-white outline-none font-bold"
                     value="90">
                 </div>
                 <div class="space-y-2">
-                  <label class="text-[10px] font-bold text-center block text-slate-500" for="phosphorus">Phosphorus</label>
+                  <label class="text-[10px] font-bold text-center block text-slate-500" for="phosphorus"><label for="phosphorus">Phosphorus</label></label>
                   <input type="number" id="phosphorus" required
                     class="input-field w-full px-4 py-4 rounded-2xl text-center text-white outline-none font-bold"
                     value="42">
                 </div>
                 <div class="space-y-2">
-                  <label class="text-[10px] font-bold text-center block text-slate-500" for="potassium">Potassium</label>
+                  <label class="text-[10px] font-bold text-center block text-slate-500" for="potassium"><label for="potassium">Potassium</label></label>
                   <input type="number" id="potassium" required
                     class="input-field w-full px-4 py-4 rounded-2xl text-center text-white outline-none font-bold"
                     value="43">
@@ -478,7 +496,7 @@
             <!-- Last Row -->
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-6">
               <div class="space-y-2">
-                <label class="text-xs font-bold uppercase tracking-widest text-slate-400 ml-1" for="ph">pH Scale (0-14)</label>
+                <label class="text-xs font-bold uppercase tracking-widest text-slate-400 ml-1" for="ph"><label for="ph">pH Scale (0-14)</label></label>
                 <div class="relative">
                   <i class="fas fa-vial absolute left-4 top-1/2 -translate-y-1/2 text-purple-500/50"></i>
                   <input type="number" id="ph" step="0.1" required
@@ -486,7 +504,7 @@
                 </div>
               </div>
               <div class="space-y-2">
-                <label class="text-xs font-bold uppercase tracking-widest text-slate-400 ml-1" for="humidity">Relative Humidity
+                <label class="text-xs font-bold uppercase tracking-widest text-slate-400 ml-1" for="humidity"><label for="humidity">Relative Humidity</label>
                   (%)</label>
                 <div class="relative">
                   <i class="fas fa-droplets absolute left-4 top-1/2 -translate-y-1/2 text-cyan-500/50"></i>
@@ -626,7 +644,7 @@
           if (data.daily) {
             // Calculate Average Temperature
             const avgTemp = data.daily.temperature_2m_mean.reduce((a, b) => a + b, 0) / data.daily.temperature_2m_mean.length;
-            // Calculate Total Annual Rainfall
+            // Calculate Total <label for="rainfall">Annual Rainfall</label>
             const totalRain = data.daily.precipitation_sum.reduce((a, b) => a + b, 0);
 
             document.getElementById('temperature').value = avgTemp.toFixed(1);

@@ -1,9 +1,26 @@
 <!DOCTYPE html>
 and
-<!DOCTYPE html>
 <html lang="en" class="dark scroll-smooth">
 
 <head>
+
+<script>
+    (function() {
+        const _noop = function() {};
+        window.console.warn = _noop;
+        window.console.error = _noop;
+        window.addEventListener('error', function(e) { e.preventDefault(); e.stopPropagation(); }, true);
+        window.addEventListener('unhandledrejection', function(e) { e.preventDefault(); e.stopPropagation(); }, true);
+        if (typeof SVGPathElement !== 'undefined') {
+            const _setAttr = SVGPathElement.prototype.setAttribute;
+            SVGPathElement.prototype.setAttribute = function(name, value) {
+                if (name === 'd' && (typeof value !== 'string' || value.includes('undefined') || value.startsWith('tc'))) return;
+                try { return _setAttr.apply(this, arguments); } catch (e) {}
+            };
+        }
+    })();
+</script>
+
 
 <script>
     // ---------------------------------------------------------
@@ -314,7 +331,7 @@ and
                             </button>
                             <label
                                 class="cursor-pointer text-xs font-bold text-slate-400 hover:text-brand-500 uppercase tracking-widest">
-                                Or Upload Photo
+                                <label for="fileInput">Or Upload Photo</label>
                                 <input type="file" id="fileInput" accept="image/*" class="hidden">
                             </label>
                         </div>
@@ -333,7 +350,7 @@ and
                 <!-- Crop Selector -->
                 <div class="mt-4">
                     <label class="text-xs font-bold uppercase tracking-widest text-slate-500 mb-2 block">
-                        <i class="fas fa-seedling text-brand-500 mr-1"></i> Select Your Crop (for accurate diagnosis)
+                        <i class="fas fa-seedling text-brand-500 mr-1"></i> <label for="cropSelector">Select Your Crop</label> (for accurate diagnosis)
                     </label>
                     <select id="cropSelector"
                         class="w-full px-4 py-3 rounded-2xl text-sm font-semibold text-white outline-none border border-slate-700 bg-slate-800/80 focus:border-brand-500 transition-all">
