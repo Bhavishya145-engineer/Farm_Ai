@@ -14,12 +14,8 @@ GEMINI_API_KEY      = os.getenv("GEMINI_API_KEY", "").strip()
 CROP_HEALTH_API_KEY = os.getenv("CROP_HEALTH_API_KEY", "").strip()
 GROK_API_KEY        = os.getenv("GROK_API_KEY", "").strip()
 
-# REST Endpoints (Resilient Architecture)
-GEMINI_V1BETA  = "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent"
-GEMINI_V1      = "https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent"
-KINDWISE_URL   = "https://crop.kindwise.com/api/v1/health_assessment"
-KINDWISE_ALT   = "https://crop.kindwise.com/api/v1/identification?details=health"
-GROK_URL       = "https://api.xai.com/v1/chat/completions"
+GROK_URL       = "https://api.x.ai/v1/chat/completions"
+GROK_MODEL     = "grok-vision-beta"
 
 # ---------------------------------------------------------------
 # Expert knowledge base
@@ -117,13 +113,13 @@ def _grok_predict(image_bytes: bytes, crop: str = "Plant") -> dict:
     if not GROK_API_KEY: raise ValueError("X-Missing")
     img_b64 = base64.b64encode(image_bytes).decode("utf-8")
     
-    # xAI uses OpenAI-Style Vision Format
+    # xAI Grok Vision API (2026 Model Standard)
     payload = {
-        "model": "grok-1.5-vision-latest",
+        "model": GROK_MODEL,
         "messages": [{
             "role": "user",
             "content": [
-                {"type": "text", "text": f"Expert Ag-Analysis: Identify disease in {crop}. JSON ONLY: {{\"disease\":\"...\",\"confidence\":0.95,\"treatment\":\"...\",\"fertilizer\":\"...\"}}"},
+                {"type": "text", "text": f"Expert Analysis: {crop}. JSON ONLY: {{\"disease\":\"Name\",\"confidence\":0.9,\"treatment\":\"Advice\",\"fertilizer\":\"Advice\"}}"},
                 {"type": "image_url", "image_url": {"url": f"data:image/jpeg;base64,{img_b64}"}}
             ]
         }]

@@ -119,11 +119,7 @@ app.mount("/logo",   StaticFiles(directory="logo"),   name="logo")
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[
-        "https://farmai-production.up.railway.app",
-        "http://localhost:8000",
-        "http://127.0.0.1:8000"
-    ],
+    allow_origins=["*"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"]
@@ -693,9 +689,9 @@ Be specific and practical."""
         return {"reply": "Chatbot API key not configured."}
     try:
         resp = http_requests.post(
-            "https://api.groq.com/openai/v1/chat/completions",
+            "https://api.x.ai/v1/chat/completions",
             headers={"Authorization": f"Bearer {GROK_API_KEY}", "Content-Type": "application/json"},
-            json={"model": "llama-3.3-70b-versatile",
+            json={"model": "grok-vision-beta",
                   "messages": [{"role": "system", "content": SYSTEM_PROMPT}, {"role": "user", "content": user_msg}],
                   "max_tokens": 1500, "temperature": 0.5},
             timeout=20
