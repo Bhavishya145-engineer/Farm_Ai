@@ -11,10 +11,11 @@ GEMINI_KEY      = os.getenv("GEMINI_API_KEY", "").strip()
 KINDWISE_KEY    = os.getenv("CROP_HEALTH_API_KEY", "").strip()
 GROQ_KEY        = os.getenv("GROK_API_KEY", "").strip()
 
-# 2026 Resilient URLs
+# 2026 Validated URLs
 KINDWISE_URL    = "https://api.kindwise.com/api/v1/identification?details=health"
-GEMINI_URL      = "https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent"
+GEMINI_URL      = "https://generativelanguage.googleapis.com/v1beta/models/gemini-3.1-pro-preview:generateContent"
 GROQ_URL        = "https://api.groq.com/openai/v1/chat/completions"
+GROQ_MODEL      = "meta-llama/llama-4-scout-17b-16e-instruct" # 2026 Llama 4 Scout Vision
 
 def _expert_fallback(image_bytes: bytes, crop: str, errors: list = None) -> dict:
     tag = f"[AI:111|{'|'.join(errors) if errors else 'OK'}]"
@@ -63,7 +64,7 @@ def _expert_fallback(image_bytes: bytes, crop: str, errors: list = None) -> dict
 def _groq_predict(image_bytes: bytes, crop: str) -> dict:
     if not GROQ_KEY: raise ValueError("X-Missing")
     b64 = base64.b64encode(image_bytes).decode("utf-8")
-    payload = { "model": "llama-3.2-11b-vision-preview", "messages": [{ "role": "user", "content": [ { "type": "text", "text": "JSON ONLY: {\"disease\":\"...\",\"confidence\":0.9,\"treatment\":\"...\"}" }, { "type": "image_url", "image_url": { "url": f"data:image/jpeg;base64,{b64}" } } ] }] }
+    payload = { "model": GROQ_MODEL, "messages": [{ "role": "user", "content": [ { "type": "text", "text": "JSON ONLY: {\"disease\":\"...\",\"confidence\":0.9,\"treatment\":\"...\"}" }, { "type": "image_url", "image_url": { "url": f"data:image/jpeg;base64,{b64}" } } ] }] }
     r = requests.post(GROQ_URL, json=payload, headers={"Authorization": f"Bearer {GROQ_KEY}"}, timeout=25)
     if r.status_code != 200: raise Exception(f"X-{r.status_code}")
     txt = r.json()["choices"][0]["message"]["content"]; res = json.loads(txt.split("```")[1].replace("json","") if "```" in txt else txt)
