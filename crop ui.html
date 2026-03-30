@@ -1,3 +1,4 @@
+<!DOCTYPE html>
 <html lang="en" class="scroll-smooth">
 
 <head>
@@ -381,7 +382,7 @@
               <div class="space-y-2">
                 <label
                   class="text-xs font-bold uppercase tracking-widest text-slate-400 ml-1 flex justify-between items-center">
-                  <span>Avg Temperature (°C)</span>
+                  <span id="lbl_temp">Avg Temperature (°C)</span>
                   <button type="button" onclick="window.detectWeather()"
                     class="text-[10px] text-brand-500 hover:text-brand-400 font-bold uppercase tracking-widest flex items-center gap-1 transition-all">
                     <i class="fas fa-satellite-dish"></i>
@@ -395,7 +396,7 @@
                 </div>
               </div>
               <div class="space-y-2">
-                <label class="text-xs font-bold uppercase tracking-widest text-slate-400 ml-1">Annual Rainfall
+                <label class="text-xs font-bold uppercase tracking-widest text-slate-400 ml-1" for="rainfall">Annual Rainfall
                   (mm)</label>
                 <div class="relative">
                   <i class="fas fa-cloud-rain absolute left-4 top-1/2 -translate-y-1/2 text-blue-500/50"></i>
@@ -415,19 +416,19 @@
               </div>
               <div class="grid grid-cols-3 gap-4">
                 <div class="space-y-2">
-                  <label class="text-[10px] font-bold text-center block text-slate-500">Nitrogen</label>
+                  <label class="text-[10px] font-bold text-center block text-slate-500" for="nitrogen">Nitrogen</label>
                   <input type="number" id="nitrogen" required
                     class="input-field w-full px-4 py-4 rounded-2xl text-center text-white outline-none font-bold"
                     value="90">
                 </div>
                 <div class="space-y-2">
-                  <label class="text-[10px] font-bold text-center block text-slate-500">Phosphorus</label>
+                  <label class="text-[10px] font-bold text-center block text-slate-500" for="phosphorus">Phosphorus</label>
                   <input type="number" id="phosphorus" required
                     class="input-field w-full px-4 py-4 rounded-2xl text-center text-white outline-none font-bold"
                     value="42">
                 </div>
                 <div class="space-y-2">
-                  <label class="text-[10px] font-bold text-center block text-slate-500">Potassium</label>
+                  <label class="text-[10px] font-bold text-center block text-slate-500" for="potassium">Potassium</label>
                   <input type="number" id="potassium" required
                     class="input-field w-full px-4 py-4 rounded-2xl text-center text-white outline-none font-bold"
                     value="43">
@@ -438,7 +439,7 @@
             <!-- Last Row -->
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-6">
               <div class="space-y-2">
-                <label class="text-xs font-bold uppercase tracking-widest text-slate-400 ml-1">pH Scale (0-14)</label>
+                <label class="text-xs font-bold uppercase tracking-widest text-slate-400 ml-1" for="ph">pH Scale (0-14)</label>
                 <div class="relative">
                   <i class="fas fa-vial absolute left-4 top-1/2 -translate-y-1/2 text-purple-500/50"></i>
                   <input type="number" id="ph" step="0.1" required
@@ -446,7 +447,7 @@
                 </div>
               </div>
               <div class="space-y-2">
-                <label class="text-xs font-bold uppercase tracking-widest text-slate-400 ml-1">Relative Humidity
+                <label class="text-xs font-bold uppercase tracking-widest text-slate-400 ml-1" for="humidity">Relative Humidity
                   (%)</label>
                 <div class="relative">
                   <i class="fas fa-droplets absolute left-4 top-1/2 -translate-y-1/2 text-cyan-500/50"></i>
