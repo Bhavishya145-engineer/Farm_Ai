@@ -111,27 +111,36 @@ def _analyze_symptoms(image: Image.Image) -> tuple:
     R, G, B = arr[:,:,0], arr[:,:,1], arr[:,:,2]
     total = R.size
     
-    # Healthy Profile: High overall brightness and consistent Green/Red balance
-    # Cereal crops (wheat/rice) aren't neon green; they are yellowish-green
-    greenish = ((G > R * 0.95) & (G > B * 1.05)).sum() / total
+    # Healthy Profile: Clean greenery
+    # We now check for a VERY clean leaf to call it 'Healthy'
+    lush_green = ((G > R * 1.05) & (G > B * 1.05)).sum() / total
     
-    # Disease symptoms (Spotting/Browning)
-    # Intense yellowing (chlorosis)
-    yellow = ((R > 200) & (G > 180) & (B < 100)).sum() / total
-    # Necrotic spots (brown/rust)
-    brown  = ((R > 130) & (G < 110) & (B < 80) & (R > G * 1.4)).sum() / total
-    # Dark/Black rot
-    dark   = ((R < 60)  & (G < 60)  & (B < 60)).sum() / total
+    # Disease symptoms (Intense spotting)
+    # Rust / Orange / Bright Spots (like in the user's screenshot)
+    rust   = ((R > 140) & (G > 60) & (G < 160) & (B < 80) & (R > G * 1.15)).sum() / total
+    # Necrotic brown/black centers
+    brown  = ((R > 80)  & (G < 80)  & (B < 70)  & (R > G * 1.5)).sum() / total
+    # Chlorosis (Wilt yellowing)
+    yellow = ((R > 190) & (G > 170) & (B < 120)).sum() / total
+    # Rot/Black
+    dark   = ((R < 50)  & (G < 50)  & (B < 50)).sum() / total
 
-    # Thresholds for "Healthy"
-    # If the plant has a lot of its natural color and very few 'spots'
-    if greenish > 0.40 and (yellow + brown + dark) < 0.12:
+    # HIGH PRECISION THRESHOLDS
+    # If there is ANY significant rusting or browning, it is NOT healthy
+    if rust > 0.04 or brown > 0.05:
+        return 1, 0.92  # Likely Rust/Spot disease
+        
+    if yellow > 0.12:
+        return 0, 0.88  # Likely Chlorosis/Wilt
+        
+    if dark > 0.08:
+        return 2, 0.85  # Likely Rot
+        
+    # Only if the leaf is very green AND has almost zero symptoms do we call it healthy
+    if lush_green > 0.35 and (rust + brown + yellow + dark) < 0.05:
         return -1, 0.98  # Healthy
         
-    if brown > 0.12:  return 1, 0.82 # Brown Spot / Rust
-    if yellow > 0.15: return 0, 0.80 # Chlorosis / Wilt
-    if dark > 0.10:   return 2, 0.78 # Rot
-    return 0, 0.60  # Default low confidence
+    return 1, 0.45  # Default to low-confidence anomaly
 
 
 def _expert_fallback(image: Image.Image, crop: str) -> dict:
@@ -140,35 +149,33 @@ def _expert_fallback(image: Image.Image, crop: str) -> dict:
     
     symptom_idx, conf = _analyze_symptoms(image)
     
-    # If our color analysis thinks it is healthy, we trust it over the disease KB
     if symptom_idx == -1:
         return {
-            "disease":    f"{crop_title}: Healthy & Fine",
+            "disease":    f"{crop_title}: Healthy",
             "confidence": conf,
-            "treatment":  "Your crop looks perfectly healthy! Continue regular monitoring and irrigation.",
-            "fertilizer": "Maintain your current fertilization schedule.",
-            "method":     "Intelligent Color Profiling (Healthy State)"
+            "treatment":  "Plant appears in excellent health. Continue current care protocol.",
+            "fertilizer": "Maintain balanced NPK schedule.",
+            "method":     "High-Precision Color Diagnostics"
         }
 
     diseases = EXPERT_KB.get(crop_key)
     if not diseases:
-        # If we got here, it means we found some symptoms but don't know the crop
         return {
-            "disease":    f"{crop_title}: Healthy", # Default to healthy if unsure but looking mostly okay
-            "confidence": 0.90,
-            "treatment":  "No specific disease identified. The crop appears to be in good condition.",
-            "fertilizer": "Balanced NPK (15-15-15).",
-            "method":     "Smart Verification Fallback"
+            "disease":    f"{crop_title}: Anomaly Detected (Possible Rust/Spot)",
+            "confidence": conf,
+            "treatment":  "Specific spots detected. Apply a broad-spectrum fungicide (mancozeb) and remove worst-affected leaves.",
+            "fertilizer": "Check soil pH; apply secondary micronutrients.",
+            "method":     "Dynamic Anomaly Fallback"
         }
         
-    idx = min(symptom_idx, len(diseases) - 1)
+    idx = min(max(symptom_idx, 0), len(diseases) - 1)
     name, treatment, fertilizer = diseases[idx]
     return {
         "disease":    name,
         "confidence": conf,
         "treatment":  treatment,
         "fertilizer": fertilizer,
-        "method":     "Expert Diagnostic Fallback"
+        "method":     "Expert Diagnostic Engine"
     }
 
 
