@@ -487,8 +487,7 @@
       function addMsg(txt, role) {
         var m = document.getElementById('farmbot-msgs'); if(!m) return;
         var d = document.createElement('div'); d.className = 'bmsg ' + role;
-        d.innerHTML = txt.replace(/
-/g, '<br>').replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+        d.innerHTML = txt.replace(/\n/g, '<br>').replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
         m.appendChild(d); m.scrollTop = m.scrollHeight; return d;
       }
       window.farmBotSend = async function () {
