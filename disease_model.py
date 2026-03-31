@@ -501,29 +501,40 @@ def predict_disease_multiple(image_list: list, crop: str = None, lat: float = No
         n = re.sub(r'[^\w\s]', '', n)
         return " ".join(n.split())
 
-    # 2. Score diseases by frequency AND confidence
+    # 2. Score diseases by frequency AND confidence with EXPERT WEIGHTING
     scores = {}
-    for r in results:
+    primary_expert_says_healthy = False
+    
+    for i, r in enumerate(results):
         raw_name = r.get("disease", "Unknown")
         norm_name = normalize(raw_name)
         if not norm_name: norm_name = "unknown"
         
-        # We give a score based on confidence to avoid picking a high-frequency but low-confidence guess
-        conf = r.get("confidence", 0.1)
+        # EXPERT WEIGHTING: Gemini (usually index 0 from parallel run) gets 2.5x weight
+        is_primary = (r.get("method") == "Gemini 1.5 Flash Expert")
+        weight = 2.5 if is_primary else 1.0
+        conf = r.get("confidence", 0.4) * weight
+        
         scores[norm_name] = scores.get(norm_name, 0) + conf
+        
+        # TRACK PRIMARY EXPERT SIGNAL
+        if is_primary and ("healthy" in norm_name or "mature" in norm_name or "ripening" in norm_name):
+            primary_expert_says_healthy = True
 
     if not scores:
         return results[0]
 
-    # Consensus norm name is the one with the highest cumulative confidence score
+    # Consensus norm name is the one with the highest weighted score
     consensus_norm = max(scores, key=scores.get)
     max_score = scores[consensus_norm]
     
-    # 🕵️ SKEPTICAL CONSENSUS GUARDRAIL
-    # If confidence is low (<0.75 cumulative) and any model says "Healthy", prioritize health
-    has_healthy_signal = any("healthy" in normalize(r.get("disease","")) for r in results)
-    if max_score < 0.75 and has_healthy_signal:
-        consensus_norm = "healthy"
+    # 🕵️ PHENOLOGICAL SAFEGUARD (The "Anti-False-Positive" Shield)
+    # If the Primary Expert says "Healthy" but others disagree with low-mod confidence, side with the expert.
+    if primary_expert_says_healthy and consensus_norm != "healthy":
+        # Only override if the non-healthy consensus isn't overwhelming (>85% individual confidence)
+        highest_disease_conf = max([r.get("confidence", 0) for r in results if normalize(r.get("disease","")) != "healthy"], default=0)
+        if highest_disease_conf < 0.85:
+            consensus_norm = "healthy"
 
     # 3. Identify outliers based on normalized names
     wrong_count = 0
