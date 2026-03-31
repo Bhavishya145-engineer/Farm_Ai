@@ -201,7 +201,7 @@ CRITICAL RULES - follow ALL strictly:
 6. In 'reason': use the correct scientific name of the pathogen (e.g. Venturia pyrina).
 
 Respond ONLY with this exact JSON (no markdown, no extra text):
-{{"disease": "...", "confidence": 0.95, "treatment": "...", "fertilizer": "...", "safety": "...", "cost_estimate": "...", "reason": "..."}}"""
+{{"disease": "...", "confidence": 0.95, "severity": "Low/Medium/High", "treatment": "...", "fertilizer": "...", "safety": "...", "cost_estimate": "...", "reason": "..."}}"""
 
     b = {
         "contents": [{"parts": [
@@ -238,6 +238,7 @@ Respond ONLY with this exact JSON (no markdown, no extra text):
     return {
         "disease": res["disease"],
         "confidence": float(res.get("confidence", 0.93)),
+        "severity": res.get("severity", "Medium"),
         "treatment": treatment,
         "fertilizer": res.get("fertilizer") or db["fertilizer"],
         "safety": res.get("safety") or db.get("safety", "Wear gloves and avoid sunlight/wind."),
@@ -270,7 +271,7 @@ RULES — follow strictly:
 5. Reason: use correct scientific name of pathogen. 1-2 sentences on exact visual symptoms.
 
 Return ONLY raw JSON (no markdown, no ```):
-{{"disease": "...", "confidence": 0.9, "treatment": "Step 1: ... Step 2: ...", "fertilizer": "...", "safety": "Wear gloves. Spray early morning/evening. Avoid sunlight and wind.", "cost_estimate": "Chemical (pack size) ≈ ₹XX. Per spray ≈ ₹XX. Full treatment for 1 acre ≈ ₹XXX.", "reason": "..."}}"""
+{{"disease": "...", "confidence": 0.9, "severity": "Low/Medium/High", "treatment": "Step 1: ... Step 2: ...", "fertilizer": "...", "safety": "Wear gloves. Spray early morning/evening. Avoid sunlight and wind.", "cost_estimate": "Chemical (pack size) ≈ ₹XX. Per spray ≈ ₹XX. Full treatment for 1 acre ≈ ₹XXX.", "reason": "..."}}"""
 
     payload = {
         "model": GROQ_MODEL,
@@ -309,6 +310,7 @@ Return ONLY raw JSON (no markdown, no ```):
     return {
         "disease": res["disease"],
         "confidence": float(res.get("confidence", 0.88)),
+        "severity": res.get("severity", "Medium"),
         "treatment": treatment,
         "fertilizer": res.get("fertilizer") or db["fertilizer"],
         "safety": res.get("safety") or db.get("safety", "Standard PPE required."),
@@ -356,6 +358,7 @@ def _kindwise_predict(image_bytes: bytes) -> dict:
     return {
         "disease": disease_name,
         "confidence": prob,
+        "severity": "High" if prob > 0.85 else "Medium",
         "treatment": treatment_str,
         "fertilizer": db["fertilizer"],
         "safety": db.get("safety", "Wear gloves and mask."),
@@ -384,35 +387,38 @@ def _expert_fallback(image_bytes: bytes, crop: str, errors: list = None) -> dict
 
     # Decision tree
     if gold_pct > 0.12:
-        return {"disease": "Healthy — Mature Crop", "confidence": 0.96,
+        return {"disease": "Healthy — Mature Crop", "confidence": 0.96, "severity": "N/A",
                 "treatment": "Crop appears to be at maturity stage. Harvest when moisture levels are optimal (14-18% for grains).",
                 "fertilizer": "Harvest-ready. No additional fertilizer required.",
                 "reason": f"Image shows {gold_pct*100:.1f}% golden/yellow coloration, consistent with a ripened, harvest-ready grain crop. No disease lesions detected.",
                 "method": "Pixel Vision Fallback"}
     if dark_pct > 0.06 and rust_pct > 0.03:
         db = DISEASE_DB["rust"]
-        return {"disease": "Foliar Rust / Fungal Lesions", "confidence": 0.82,
+        sev = "High" if (dark_pct + rust_pct) > 0.15 else "Medium"
+        return {"disease": "Foliar Rust / Fungal Lesions", "confidence": 0.82, "severity": sev,
                 "treatment": db["treatment"], "fertilizer": db["fertilizer"],
                 "safety": db.get("safety"), "cost_estimate": db.get("cost_estimate"),
                 "reason": f"Detected {rust_pct*100:.1f}% orange/rust-colored pixels alongside {dark_pct*100:.1f}% dark necrotic areas, indicating active fungal rust infection on leaf surfaces.",
                 "method": "Pixel Vision Fallback"}
     if yellow_pct > 0.10 and green_pct < 0.35:
         db = DISEASE_DB["deficiency"]
-        return {"disease": "Nutrient Deficiency / Chlorosis", "confidence": 0.78,
+        sev = "Medium" if yellow_pct > 0.20 else "Low"
+        return {"disease": "Nutrient Deficiency / Chlorosis", "confidence": 0.78, "severity": sev,
                 "treatment": db["treatment"], "fertilizer": db["fertilizer"],
                 "safety": db.get("safety"), "cost_estimate": db.get("cost_estimate"),
                 "reason": f"Image shows {yellow_pct*100:.1f}% yellowing with reduced green pigmentation ({green_pct*100:.1f}%), a hallmark of chlorosis caused by nutrient deficiency (likely Nitrogen, Iron, or Magnesium).",
                 "method": "Pixel Vision Fallback"}
     if rust_pct > 0.008:
         db = DISEASE_DB["spot"]
-        return {"disease": "Leaf Spot / Blight Symptoms", "confidence": 0.75,
+        sev = "Low" if rust_pct < 0.02 else "Medium"
+        return {"disease": "Leaf Spot / Blight Symptoms", "confidence": 0.75, "severity": sev,
                 "treatment": db["treatment"], "fertilizer": db["fertilizer"],
                 "safety": db.get("safety"), "cost_estimate": db.get("cost_estimate"),
                 "reason": f"Detected {rust_pct*100:.2f}% orange-brown spot patterns on the leaf surface, suggesting early-stage fungal or bacterial leaf spot infection.",
                 "method": "Pixel Vision Fallback"}
     if green_pct > 0.50:
         db = DISEASE_DB["healthy"]
-        return {"disease": "Healthy", "confidence": 0.88,
+        return {"disease": "Healthy", "confidence": 0.88, "severity": "Healthy",
                 "treatment": f"{db['treatment']} {err_tag}",
                 "fertilizer": db["fertilizer"],
                 "safety": db.get("safety"),
@@ -421,7 +427,7 @@ def _expert_fallback(image_bytes: bytes, crop: str, errors: list = None) -> dict
                 "method": "Pixel Vision Fallback"}
 
     db = DISEASE_DB["default"]
-    return {"disease": "Inconclusive — Requires Field Inspection", "confidence": 0.55,
+    return {"disease": "Inconclusive — Requires Field Inspection", "confidence": 0.55, "severity": "Unknown",
             "treatment": f"{db['treatment']} {err_tag}",
             "fertilizer": db["fertilizer"],
             "safety": db.get("safety", "Standard safety precautions."),

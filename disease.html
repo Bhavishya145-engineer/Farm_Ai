@@ -80,6 +80,14 @@
                     <div id="locationBadge" class="hidden flex items-center gap-2 mb-4 px-3 py-1.5 rounded-xl bg-blue-500/10 border border-blue-500/20 text-[10px] font-bold text-blue-400">
                         <i class="fas fa-location-dot"></i> <span id="locationText">Detecting Location...</span>
                     </div>
+                    
+                    <div id="severityBadge" class="flex items-center justify-between mb-4 px-4 py-2.5 rounded-2xl bg-white/5 border border-white/10 uppercase tracking-widest text-[10px] font-black">
+                        <div class="flex items-center gap-2">
+                            <i id="sevIcon" class="fas fa-thermometer-half text-brand-500"></i>
+                            <span class="text-slate-500">Severity Level:</span>
+                        </div>
+                        <span id="sevVal" class="text-white">Medium</span>
+                    </div>
                     <div class="p-5 rounded-3xl bg-white/5 border border-white/5 mb-4">
                         <h4 class="text-[10px] font-black text-brand-500 uppercase tracking-widest mb-2">Methodology</h4>
                         <p id="methodText" class="text-xs text-slate-500 mb-3 italic">...</p>
@@ -206,6 +214,11 @@
             document.getElementById('reasonText').textContent = data.reason || 'AI visual pattern analysis used for this diagnosis.';
             document.getElementById('safetyText').textContent = data.safety || 'Wear gloves and avoid spraying during strong sunlight/wind.';
             document.getElementById('costText').textContent = data.cost_estimate || 'Estimate pending regional verification.';
+            document.getElementById('sevVal').textContent = data.severity || 'Medium';
+            
+            const sevIcon = document.getElementById('sevIcon');
+            const sevColor = data.severity === 'High' ? 'text-red-500' : (data.severity === 'Low' || data.severity === 'Healthy' ? 'text-green-500' : 'text-yellow-500');
+            sevIcon.className = `fas fa-thermometer-half ${sevColor}`;
             
             if(data.location_name) {
                 document.getElementById('locationBadge').classList.remove('hidden');

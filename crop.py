@@ -444,6 +444,7 @@ async def predict_disease(
         return {
             "disease":    result.get("disease", "Unknown"),
             "confidence": result.get("confidence", 0.0),
+            "severity":   result.get("severity", "Medium"),
             "treatment":  result.get("treatment", "No treatment available."),
             "fertilizer": result.get("fertilizer", "No fertilizer recommendation."),
             "safety":     result.get("safety", ""),

@@ -45,8 +45,8 @@ Predicts the best crop to grow based on soil nutrients (N, P, K), temperature, h
 </td>
 <td width="50%">
 
-### 🔬 Disease Detection
-Upload a leaf image and get instant disease diagnosis with treatment recommendations and fertilizer advice.
+### 🔬 Expert Disease Detection
+Go beyond simple identification with a multi-tier AI pipeline (Gemini 1.5 Flash, Groq Llama, Kindwise). Provides exact chemical dosages, **Spray Safety Notes**, **Regional Cost Estimates (₹)** based on geolocation, and **Severity Analysis**.
 
 </td>
 </tr>
@@ -87,8 +87,8 @@ Secure register, login, profile management, and password change with bcrypt encr
 </td>
 <td width="50%">
 
-### 📱 Android PWA
-Installable as a Progressive Web App on Android devices — works like a native app.
+### 📍 Smart Geolocation
+Automatically detects your region to provide "Verified for [Location]" cost estimates for fertilizers and pesticides, ensuring regional accuracy.
 
 </td>
 </tr>
@@ -208,10 +208,11 @@ Just double-click **`start_farmai.bat`** — it installs dependencies and launch
 | Property | Value |
 |:---------|:------|
 | Algorithm | Random Forest Classifier |
-| Training Samples | 2,200 |
-| Number of Crops | 22 |
+| Training Samples | 101,000 |
+| Number of Crops | 101 |
 | Input Features | N, P, K, Temperature, Humidity, pH, Rainfall |
-| Output | Top-N crops with confidence scores |
+| Output | Top-5 crops with confidence scores |
+| Diagnostic Engine | Multi-tier (Gemini 1.5 + Groq + Pixel-Fallback) |
 
 </div>
 
