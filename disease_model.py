@@ -255,14 +255,15 @@ def _groq_predict(api_key: str, image_bytes: bytes, crop: str) -> dict:
     if not api_key:
         raise ValueError("X-Missing")
 
-    expert_prompt = f"""You are a Clinical Plant Pathologist. Analyze this {crop or 'crop'}.
-    1. MAIZE VALIDATION: Differentiate between healthy orange Tassels at the top vs disease.
-    2. MAIZE DISEASES: "Cigar-shaped" = N. Blight, "Rectangular" = Grey Leaf Spot, "Circular" = Rust.
-    3. Grains: Heads (Maturity/Anthers) vs Leaf (Rust).
-    4. If healthy -> "Healthy". If diseased, exact chemicals + doses.
+    expert_prompt = f"""You are a Senior Agronomist performing a 'Health First' review. 
+    Analyze this {crop or 'crop'} image for natural development.
+    1. CROP IDENTIFICATION: Is this Maize, Wheat, or Rice? 
+    2. MATURITY CHECK: Look at the heads/ears/tassels. If turning golden/brown uniformly, it is HEALTHY MATURITY.
+    3. LEAF INSPECTION: Look specifically at the leaf surface. Are there active orange/yellow/brown pustules or cigar-shaped GREY patches? 
+    4. DECISION: If leaves are green and heads are golden -> DISEASE = "Healthy".
     
-    Return JSON only:
-    {{"disease": "...", "confidence": 0.9, "severity": "...", "treatment": "...", "reason": "Proof."}}"""
+    Return ONLY JSON:
+    {{"disease": "...", "confidence": 0.9, "severity": "...", "treatment": "...", "reason": "Explain maturity vs disease signs."}}"""
 
     payload = {
         "model": GROQ_MODEL,
@@ -307,7 +308,7 @@ def _groq_predict(api_key: str, image_bytes: bytes, crop: str) -> dict:
         "safety": res.get("safety") or db.get("safety", "Standard PPE required."),
         "cost_estimate": res.get("cost_estimate") or db.get("cost_estimate", "Varies by region."),
         "reason": reason,
-        "method": "Groq Llama 3.2 Vision"
+        "method": "Groq Llama 3.2 Vision Expert"
     }
 
 # ---------------------------------------------------------------------------
@@ -452,7 +453,7 @@ def predict_disease_from_image(image_bytes: bytes, crop: str = None, lat: float 
         try: return {"name": name, "res": func(key, *args), "err": None}
         except Exception as e: return {"name": name, "res": None, "err": str(e)}
 
-    with ThreadPoolExecutor(max_workers=3) as executor:
+    with ThreadPoolExecutor(max_workers=4) as executor:
         futures = [
             executor.submit(run_tier, "Gemini", _gemini_predict, GK, image_bytes, c),
             executor.submit(run_tier, "Groq", _groq_predict, XK, image_bytes, c),
@@ -510,15 +511,16 @@ def predict_disease_multiple(image_list: list, crop: str = None, lat: float = No
         norm_name = normalize(raw_name)
         if not norm_name: norm_name = "unknown"
         
-        # EXPERT WEIGHTING: Gemini (usually index 0 from parallel run) gets 2.5x weight
-        is_primary = (r.get("method") == "Gemini 1.5 Flash Expert")
-        weight = 2.5 if is_primary else 1.0
-        conf = r.get("confidence", 0.4) * weight
+        # 🏆 EXTREME GROQ PREFERENCE: Groq gets 3.0x weight as requested
+        method = r.get("method", "")
+        weight = 3.0 if "Groq" in method else 1.0
+        if "Gemini" in method: weight = 1.5
         
+        conf = r.get("confidence", 0.4) * weight
         scores[norm_name] = scores.get(norm_name, 0) + conf
         
         # TRACK PRIMARY EXPERT SIGNAL
-        if is_primary and ("healthy" in norm_name or "mature" in norm_name or "ripening" in norm_name):
+        if ("Groq" in method or "Gemini" in method) and ("healthy" in norm_name or "mature" in norm_name or "ripening" in norm_name):
             primary_expert_says_healthy = True
 
     if not scores:
