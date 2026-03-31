@@ -380,71 +380,55 @@ def _expert_fallback(image_bytes: bytes, crop: str, errors: list = None) -> dict
     total = R.size
 
     # Color masks
-    gold_pct  = ((R > 180) & (G > 160) & (B < 130)).sum() / total   # mature grain
-    green_pct = ((G > R + 15) & (G > B + 15)).sum() / total          # healthy green
-    rust_pct  = ((R > G + 45) & (R > B + 65) & (R < 215) & (G > 35)).sum() / total  # rust/orange spots
-    yellow_pct = ((R > 180) & (G > 160) & (B < 80)).sum() / total    # yellowing (deficiency)
-    dark_pct  = ((R < 80) & (G < 80) & (B < 80)).sum() / total       # dark lesions/necrosis
+    gold_pct   = ((R > 180) & (G > 160) & (B < 130)).sum() / total   # mature grain
+    green_pct  = ((G > R + 15) & (G > B + 15)).sum() / total          # healthy green
+    rust_pct   = ((R > G + 45) & (R > B + 65) & (R < 215) & (G > 35)).sum() / total  # rust/orange
+    yellow_pct = ((R > 180) & (G > 160) & (B < 80)).sum() / total    # chlorosis
+    dark_pct   = ((R < 80) & (G < 80) & (B < 80)).sum() / total       # necrosis
 
-    # MAIZE/CORN SPECIALIZED DETECTION
+    # -----------------------------------------------------------------------
+    # LOGIC IMPROVEMENTS: Focus on "Healthy" bias and pattern recognition
+    # -----------------------------------------------------------------------
     is_maize = crop and crop.lower() in ["maize", "corn"]
-    if is_maize:
-        if yellow_pct > 0.08 and rust_pct > 0.02:
-            db = DISEASE_DB["blight"]
-            return {"disease": "Maize Northern Leaf Blight / Rust", "confidence": 0.85, "severity": "Medium",
-                    "treatment": db["treatment"], "fertilizer": db["fertilizer"],
-                    "safety": db.get("safety"), "cost_estimate": db.get("cost_estimate"),
-                    "reason": f"Analyzed Maize morphology: {yellow_pct*100:.1f}% longitudinal chlorotic streaks and {rust_pct*100:.1f}% necrotic spotting indicates Blight or Rust.",
-                    "method": "Maize-Optimized Pixel Vision"}
+    
+    # 1. Healthy Ripening/Maturity (Golden hue)
+    if gold_pct > 0.15 and rust_pct < 0.12:
+        return {"disease": "Healthy — Ripening Stage", "confidence": 0.95, "severity": "Healthy",
+                "treatment": "Crop is maturing naturally. No chemical treatment required.",
+                "fertilizer": "No additional fertilizer needed at ripening stage.",
+                "reason": f"Maturity detection: {gold_pct*100:.1f}% golden/yellow hue. Typical of ripening heads/ears.",
+                "method": "Neural Fallback"}
 
-    # Decision tree
-    if gold_pct > 0.12:
-        return {"disease": "Healthy — Mature Crop", "confidence": 0.96, "severity": "N/A",
-                "treatment": "Crop appears to be at maturity stage. Harvest when moisture levels are optimal (14-18% for grains).",
-                "fertilizer": "Harvest-ready. No additional fertilizer required.",
-                "reason": f"Image shows {gold_pct*100:.1f}% golden/yellow coloration, consistent with a ripened, harvest-ready grain crop. No disease lesions detected.",
-                "method": "Neural Fallback"}
-    if dark_pct > 0.06 and rust_pct > 0.03:
-        db = DISEASE_DB["rust"]
-        sev = "High" if (dark_pct + rust_pct) > 0.15 else "Medium"
-        return {"disease": "Foliar Rust / Fungal Lesions", "confidence": 0.82, "severity": sev,
-                "treatment": db["treatment"], "fertilizer": db["fertilizer"],
-                "safety": db.get("safety"), "cost_estimate": db.get("cost_estimate"),
-                "reason": f"Detected {rust_pct*100:.1f}% orange/rust-colored pixels alongside {dark_pct*100:.1f}% dark necrotic areas.",
-                "method": "Neural Fallback"}
-    if yellow_pct > 0.10 and green_pct < 0.35:
-        db = DISEASE_DB["deficiency"]
-        sev = "Medium" if yellow_pct > 0.20 else "Low"
-        return {"disease": "Nutrient Deficiency / Chlorosis", "confidence": 0.78, "severity": sev,
-                "treatment": db["treatment"], "fertilizer": db["fertilizer"],
-                "safety": db.get("safety"), "cost_estimate": db.get("cost_estimate"),
-                "reason": f"Image shows {yellow_pct*100:.1f}% yellowing with reduced green pigmentation ({green_pct*100:.1f}%).",
-                "method": "Neural Fallback"}
-    if rust_pct > 0.008:
-        db = DISEASE_DB["spot"]
-        sev = "Low" if rust_pct < 0.02 else "Medium"
-        return {"disease": "Leaf Spot / Blight Symptoms", "confidence": 0.75, "severity": sev,
-                "treatment": db["treatment"], "fertilizer": db["fertilizer"],
-                "safety": db.get("safety"), "cost_estimate": db.get("cost_estimate"),
-                "reason": f"Detected {rust_pct*100:.2f}% orange-brown spot patterns on the plant surface.",
-                "method": "Neural Fallback"}
-    if green_pct > 0.50:
+    # 2. Strong Green Baseline (Healthy)
+    if green_pct > 0.45 and rust_pct < 0.10:
         db = DISEASE_DB["healthy"]
-        return {"disease": "Healthy", "confidence": 0.88, "severity": "Healthy",
-                "treatment": f"{db['treatment']} {err_tag}",
-                "fertilizer": db["fertilizer"],
-                "safety": db.get("safety"),
-                "cost_estimate": db.get("cost_estimate"),
-                "reason": f"Image is dominated by {green_pct*100:.1f}% healthy green pigmentation.",
+        return {"disease": "Healthy", "confidence": 0.92, "severity": "Healthy",
+                "treatment": db["treatment"], "fertilizer": db["fertilizer"],
+                "safety": db.get("safety"), "cost_estimate": db.get("cost_estimate"),
+                "reason": f"High vegetative health: {green_pct*100:.1f}% green coverage. No significant lesion patterns.",
+                "method": "Neural Fallback"}
+
+    # 3. Maize Specialized Blight
+    if is_maize and yellow_pct > 0.12:
+        db = DISEASE_DB["blight"]
+        return {"disease": "Maize Leaf Blight Symptoms", "confidence": 0.84, "severity": "Medium",
+                "treatment": db["treatment"], "fertilizer": db["fertilizer"],
+                "reason": f"Maize Blight Analysis: {yellow_pct*100:.1f}% longitudinal chlorotic streaks detected.",
+                "method": "Neural Fallback"}
+
+    # 4. Actual Rust/Fungal Detection (Higher Thresholds)
+    if rust_pct > 0.08 and (dark_pct > 0.05 or yellow_pct > 0.15):
+        db = DISEASE_DB["rust"]
+        sev = "High" if (rust_pct + dark_pct) > 0.20 else "Medium"
+        return {"disease": "Foliar Rust / Fungal Infection", "confidence": 0.81, "severity": sev,
+                "treatment": db["treatment"], "fertilizer": db["fertilizer"],
+                "reason": f"Detected {rust_pct*100:.1f}% active fungal signature with {dark_pct*100:.1f}% necrotic tissue.",
                 "method": "Neural Fallback"}
 
     db = DISEASE_DB["default"]
-    return {"disease": "Inconclusive — Need Clearer Imagery", "confidence": 0.55, "severity": "Unknown",
-            "treatment": f"{db['treatment']} {err_tag}",
-            "fertilizer": db["fertilizer"],
-            "safety": db.get("safety", "Standard safety precautions."),
-            "cost_estimate": "N/A",
-            "reason": "Pixel analysis returned mixed signals. No dominant pattern matched known disease signatures.",
+    return {"disease": "Inconclusive / Healthy", "confidence": 0.60, "severity": "Unknown",
+            "treatment": f"No definitive symptoms found. {db['treatment']}",
+            "reason": "Image analysis returned mostly healthy or natural ripening signals.",
             "method": "Neural Fallback"}
 
 # ---------------------------------------------------------------------------
@@ -478,15 +462,16 @@ def predict_disease_from_image(image_bytes: bytes, crop: str = None, lat: float 
     results = []
     errs = []
     
-    def run_tier(name, func, *args):
+    def run_tier(name, func, key, *args):
+        if not key: return {"name": name, "res": None, "err": "Key Missing"}
         try: return {"name": name, "res": func(*args), "err": None}
         except Exception as e: return {"name": name, "res": None, "err": str(e)}
 
     with ThreadPoolExecutor(max_workers=3) as executor:
         futures = [
-            executor.submit(run_tier, "Gemini", _gemini_predict, image_bytes, c),
-            executor.submit(run_tier, "Groq", _groq_predict, image_bytes, c),
-            executor.submit(run_tier, "Kindwise", _kindwise_predict, image_bytes)
+            executor.submit(run_tier, "Gemini", _gemini_predict, GEMINI_KEY, image_bytes, c),
+            executor.submit(run_tier, "Groq", _groq_predict, GROQ_KEY, image_bytes, c),
+            executor.submit(run_tier, "Kindwise", _kindwise_predict, KINDWISE_KEY, image_bytes)
         ]
         tier_results = [f.result() for f in futures]
 
