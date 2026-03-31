@@ -10,7 +10,8 @@ load_dotenv()
 
 # API URLs for orchestration
 # API URLs for orchestration
-GEMINI_URL   = "https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent"
+# API URLs for orchestration
+GEMINI_URL   = "https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash-latest:generateContent"
 GROQ_URL     = "https://api.groq.com/openai/v1/chat/completions"
 GROQ_MODEL   = "llama-3.2-11b-vision-preview"
 KINDWISE_URL = "https://crop.kindwise.com/api/v1/identification"
@@ -281,7 +282,7 @@ def _groq_predict(api_key: str, image_bytes: bytes, crop: str) -> dict:
             ]
         }],
         "temperature": 0.1,
-        "max_tokens": 500
+        "max_tokens": 400
     }
     r = requests.post(GROQ_URL, json=payload, headers={"Authorization": f"Bearer {api_key}"}, timeout=30)
     if r.status_code != 200:
@@ -334,7 +335,7 @@ def _kindwise_predict(api_key: str, image_bytes: bytes) -> dict:
     }
 
     r = requests.post(KINDWISE_URL, json=payload, headers=headers, timeout=15)
-    if r.status_code != 200:
+    if r.status_code not in [200, 201]:
         raise Exception(f"K-{r.status_code}")
 
     data = r.json()
