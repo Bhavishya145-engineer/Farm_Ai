@@ -6,15 +6,16 @@ from PIL import Image
 import numpy as np
 from dotenv import load_dotenv
 
-SERVER_VERSION = "v6.0-Grok-Authority-Confirmed"
+SERVER_VERSION = "v6.2-Grok-Repair-Live"
 
 load_dotenv()
 
 # API URLs for orchestration
 # API URLs for orchestration
 # API URLs for orchestration
-GEMINI_URL   = "https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash-latest:generateContent"
+GEMINI_URL   = "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent"
 GROQ_URL     = "https://api.groq.com/openai/v1/chat/completions"
+# Groq decommissioned 11b-preview. Retrying latest or multimodal fallback.
 GROQ_MODEL   = "llama-3.2-11b-vision-preview"
 KINDWISE_URL = "https://crop.kindwise.com/api/v1/identification"
 
@@ -284,6 +285,11 @@ def _groq_predict(api_key: str, image_bytes: bytes, crop: str) -> dict:
         "max_tokens": 400
     }
     r = requests.post(GROQ_URL, json=payload, headers={"Authorization": f"Bearer {api_key}"}, timeout=30)
+    if r.status_code == 400 and "decommissioned" in r.text:
+        # Emergency Fallback to alternative vision model on Groq
+        payload["model"] = "llama-3.2-90b-vision-preview"
+        r = requests.post(GROQ_URL, json=payload, headers={"Authorization": f"Bearer {api_key}"}, timeout=30)
+
     if r.status_code != 200:
         raise Exception(f"X-{r.status_code}")
 
