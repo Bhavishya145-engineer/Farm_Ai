@@ -181,34 +181,36 @@ def _gemini_predict(image_bytes: bytes, crop: str) -> dict:
     if not GEMINI_KEY:
         raise ValueError("G-Missing")
 
-    expert_prompt = f"""You are a world-class Plant Pathologist AI with 20+ years of expertise.
+    expert_prompt = f"""You are a senior plant pathologist and agronomist AI with 20+ years of expertise.
+    Analyze the provided image of a {crop if crop else 'crop'} and provide a precise diagnosis.
+    Requirements:
+    1. Identify the disease name with scientific precision.
+    2. Perform a morphological analysis: Describe lesion shape, color, and distribution (e.g. pustules, chlorotic halos).
+    3. Determine the infection stage (Early/Medium/Late).
+    4. Provide a treatment plan including chemical names and precise dosages (e.g. 2g/L).
+    5. Provide a safety note for spraying.
+    6. Estimate the total treatment cost per acre in INR (₹) based on Indian regional rates.
+    7. Explain the 'Why': What specific visual markers lead to this diagnosis?
 
-Analyze this image of {crop or 'a plant/crop'} and provide a highly accurate diagnosis.
-
-CRITICAL RULES - follow ALL strictly:
-1. Name the EXACT disease (e.g. "Pear Leaf Scorch", "Wheat Leaf Rust") - NEVER just a symptom or chemical.
-2. If healthy or mature crop (golden grain, green leaves, no lesions) - report "Healthy".
-3. Treatment MUST be step-by-step with:
-   - Exact chemical name AND formulation (e.g. Mancozeb 75WP, Copper Oxychloride 50WP)
-   - Exact dose per litre AND per 20-litre spray tank (e.g. 2g/L = 40g per 20L tank)
-   - Spray TIMING: when to start (e.g. early in season, before symptoms, at first sign)
-   - At least ONE alternative fungicide for rotation (e.g. Carbendazim 50WP or Chlorothalonil 75WP)
-   - Environmental advice (e.g. avoid overhead irrigation, improve air circulation)
-   - Correct scientific name of the pathogen (e.g. Venturia pyrina, NOT pirina)
-   - For Bordeaux Mixture: state exactly 10g CuSO4 + 10g hydrated lime per litre of water
-4. Fertilizer: exact product + dose (e.g. MOP at 3kg/acre - NOT vague like 'boost potassium').
-5. Confidence: assign based on clarity of symptoms visible in the image.
-6. In 'reason': use the correct scientific name of the pathogen (e.g. Venturia pyrina).
-
-Respond ONLY with this exact JSON (no markdown, no extra text):
-{{"disease": "...", "confidence": 0.95, "severity": "Low/Medium/High", "treatment": "...", "fertilizer": "...", "safety": "...", "cost_estimate": "...", "reason": "..."}}"""
+    Return ONLY a JSON object with this exact structure:
+    {{
+      "disease": "Exact Name",
+      "confidence": 0.95,
+      "severity": "Early/Medium/Late Infection",
+      "method": "Neural Morphological Analysis",
+      "treatment": "Step-by-step treatment plan",
+      "safety": "Spray safety instructions",
+      "cost_estimate": "Detailed cost breakdown in INR (₹) per acre",
+      "reason": "Evidence-based reasoning from morphological markers"
+    }}
+    """
 
     b = {
         "contents": [{"parts": [
             {"text": expert_prompt},
             {"inline_data": {"mime_type": "image/jpeg", "data": base64.b64encode(image_bytes).decode("utf-8")}}
         ]}],
-        "generationConfig": {"temperature": 0.1, "maxOutputTokens": 600}
+        "generationConfig": {"temperature": 0.1, "maxOutputTokens": 800}
     }
     r = requests.post(f"{GEMINI_URL}?key={GEMINI_KEY}", json=b, timeout=25)
     if r.status_code == 429:

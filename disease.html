@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>FarmAI | Live Diagnostic Camera</title>
+    <title>FarmAI | Advanced Diagnostic Engine</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&family=Playfair+Display:wght@700;900&display=swap" rel="stylesheet">
@@ -19,10 +19,13 @@
         }
     </script>
     <style>
-        .glass-card { background: rgba(255, 255, 255, 0.03); backdrop-filter: blur(20px); border: 1px solid rgba(255, 255, 255, 0.05); box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5); }
-        .scanner-line { width: 100%; height: 4px; background: linear-gradient(90deg, transparent, #10b981, transparent); position: absolute; top: 0; left: 0; z-index: 30; display: none; animation: scan 2s linear infinite; box-shadow: 0 0 15px #10b981; }
+        .glass-card { background: rgba(255, 255, 255, 0.03); backdrop-filter: blur(25px); border: 1px solid rgba(255, 255, 255, 0.05); box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5); }
+        .scanner-line { width: 100%; height: 4px; background: linear-gradient(90deg, transparent, #10b981, transparent); position: absolute; top: 0; left: 0; z-index: 30; display: none; animation: scan 2.5s linear infinite; box-shadow: 0 0 15px #10b981; }
         @keyframes scan { 0% { top: 0; } 50% { top: 100%; } 100% { top: 0; } }
         .gradient-text-green { background: linear-gradient(135deg, #10b981 0%, #34d399 100%); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent; }
+        .custom-scrollbar::-webkit-scrollbar { width: 4px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.1); border-radius: 10px; }
     </style>
 </head>
 <body class="text-slate-200 min-h-screen font-sans flex flex-col items-center pb-20 bg-slate-900">
@@ -38,18 +41,20 @@
         </div>
     </header>
 
-    <main class="max-w-4xl w-full px-6 mt-16 text-center">
-        <h2 class="font-display text-5xl font-extrabold text-white mb-4">Live <span class="gradient-text-green">Camera</span></h2>
-        <p class="text-slate-500 text-lg mb-12">Point your camera at a crop leaf for a high-precision AI diagnosis.</p>
+    <main class="max-w-6xl w-full px-6 mt-12 mb-20">
+        <div class="text-center mb-10">
+            <h2 class="font-display text-5xl font-extrabold text-white mb-3">Diagnostic <span class="gradient-text-green">Engine</span></h2>
+            <p class="text-slate-500 text-lg">Industrial-grade AI pathology for precision agriculture.</p>
+        </div>
 
-        <div class="grid md:grid-cols-2 gap-8 items-start">
-            <div class="glass-card rounded-[2.5rem] p-6 flex flex-col h-[580px]">
-                <!-- Mode Switcher -->
+        <div class="grid lg:grid-cols-[1.1fr_1fr] gap-10 items-start">
+            <!-- Left Side: Input -->
+            <div class="glass-card rounded-[2.5rem] p-6 flex flex-col h-[620px]">
                 <div class="flex p-1 bg-slate-800/50 rounded-2xl mb-6 border border-white/5">
-                    <button onclick="setMode('camera')" id="camModeBtn" class="flex-1 py-2.5 rounded-xl text-xs font-bold transition-all bg-brand-500 text-white shadow-lg">
+                    <button onclick="setMode('camera')" id="camModeBtn" class="flex-1 py-3 rounded-xl text-xs font-bold transition-all bg-brand-500 text-white shadow-lg">
                         <i class="fas fa-camera mr-2"></i> Live Camera
                     </button>
-                    <button onclick="setMode('upload')" id="upModeBtn" class="flex-1 py-2.5 rounded-xl text-xs font-bold transition-all text-slate-400 hover:text-white">
+                    <button onclick="setMode('upload')" id="upModeBtn" class="flex-1 py-3 rounded-xl text-xs font-bold transition-all text-slate-400 hover:text-white">
                         <i class="fas fa-file-upload mr-2"></i> Direct Upload
                     </button>
                 </div>
@@ -63,103 +68,115 @@
                         <div id="previewQueue" class="absolute top-4 left-4 z-40 flex flex-col gap-2"></div>
                         
                         <div id="cameraControls" class="absolute bottom-6 inset-x-0 z-50 flex justify-center items-center gap-4">
-                            <button onclick="takeSnapshot()" class="w-16 h-16 bg-white rounded-full border-4 border-brand-500 text-brand-500 shadow-2xl flex items-center justify-center transition-transform hover:scale-110 active:scale-95"><i class="fas fa-camera text-2xl"></i></button>
-                            <button id="analyzeBtn" onclick="analyzeImages()" class="hidden px-6 py-3 bg-brand-500 rounded-full text-white font-bold shadow-2xl flex items-center gap-2 transition-all hover:scale-105 active:scale-95">
-                                <i class="fas fa-microscope"></i> Scan <span id="photoCount">0</span>
+                            <button onclick="takeSnapshot()" class="w-16 h-16 bg-white rounded-full border-4 border-brand-500 text-brand-500 shadow-2xl flex items-center justify-center transition-transform hover:scale-110 active:scale-95 shadow-brand-500/30"><i class="fas fa-camera text-2xl"></i></button>
+                            <button id="analyzeBtn" onclick="analyzeImages()" class="hidden px-8 py-4 bg-brand-500 rounded-2xl text-white font-black text-xs uppercase tracking-widest shadow-2xl flex items-center gap-3 transition-all hover:scale-105 active:scale-95">
+                                <i class="fas fa-microscope text-lg"></i> Run Scan (<span id="photoCount">0</span>)
                             </button>
                             <button id="clearBtn" onclick="clearQueue()" class="hidden w-12 h-12 bg-red-500/20 border border-red-500/30 text-red-500 rounded-full flex items-center justify-center transition-all hover:bg-red-500 hover:text-white"><i class="fas fa-trash"></i></button>
                         </div>
                     </div>
                 </div>
 
-                <div id="uploadMode" class="hidden flex-grow flex flex-col items-center justify-center border-2 border-dashed border-slate-700 rounded-3xl bg-slate-800/30 transition-all hover:border-brand-500/50 hover:bg-slate-800/50">
+                <div id="uploadMode" class="hidden flex-grow flex flex-col items-center justify-center border-2 border-dashed border-slate-700/50 rounded-3xl bg-slate-800/20 transition-all hover:border-brand-500/50 hover:bg-slate-800/40">
                     <div class="text-center p-8">
                         <div class="w-20 h-20 bg-brand-500/10 rounded-full flex items-center justify-center mx-auto mb-6">
                             <i class="fas fa-cloud-arrow-up text-3xl text-brand-500"></i>
                         </div>
-                        <h4 class="text-xl font-bold text-white mb-2">Drop your photos here</h4>
-                        <p class="text-slate-500 text-sm mb-8">Upload one or more pictures of the same plant for analysis.</p>
+                        <h4 class="text-xl font-bold text-white mb-2">Diagnostic Data Source</h4>
+                        <p class="text-slate-500 text-sm mb-10 max-w-[260px] mx-auto">Upload multiple leaf snapshots for deep neural verification.</p>
                         
-                        <button onclick="document.getElementById('fileInput').click()" class="px-8 py-4 rounded-2xl bg-brand-500 text-white font-black uppercase tracking-widest shadow-xl shadow-brand-500/20 hover:bg-brand-600 transition-all">Select Files</button>
+                        <button onclick="document.getElementById('fileInput').click()" class="px-10 py-5 rounded-2xl bg-brand-500 text-white font-black uppercase tracking-widest shadow-xl shadow-brand-500/20 hover:bg-brand-600 hover:-translate-y-1 transition-all">Select Images</button>
                         <input type="file" id="fileInput" accept="image/*" multiple class="hidden" onchange="handleFiles(this.files)">
                         
                         <div id="uploadQueue" class="mt-8 flex flex-wrap justify-center gap-3"></div>
-                        <button id="uploadAnalyzeBtn" onclick="analyzeImages()" class="hidden mt-6 px-10 py-4 bg-white text-deep rounded-2xl font-black uppercase tracking-widest transition-all hover:scale-105 active:scale-95">Analyze Uploads</button>
+                        <button id="uploadAnalyzeBtn" onclick="analyzeImages()" class="hidden mt-10 px-12 py-5 bg-white text-deep rounded-[1.25rem] font-black uppercase tracking-widest transition-all hover:scale-105 active:scale-95">Execute Neural Analysis</button>
                     </div>
                 </div>
 
-                <div class="mt-4">
-                    <select id="cropSelector" class="w-full px-4 py-4 rounded-2xl text-sm font-semibold text-white outline-none border border-slate-700 bg-slate-800/80 focus:border-brand-500 transition-all">
-                        <option value="">-- Auto Detect Crop --</option>
+                <div class="mt-6">
+                    <select id="cropSelector" class="w-full px-5 py-4 rounded-2xl text-xs font-black uppercase tracking-widest text-white outline-none border border-slate-700 bg-slate-800/80 focus:border-brand-500 transition-all cursor-pointer">
+                        <option value="">-- [AUTO DETECT PATHOGEN] --</option>
                         <option value="maize">Maize/Corn</option><option value="rice">Rice/Paddy</option><option value="wheat">Wheat</option>
+                        <option value="sugarcane">Sugarcane</option><option value="potato">Potato</option><option value="tomato">Tomato</option>
                     </select>
                 </div>
             </div>
 
-            <div class="glass-card rounded-[2.5rem] p-8 h-[580px] flex flex-col items-center justify-center relative">
-                <div id="preScan" class="text-center">
-                    <i class="fas fa-microscope text-slate-700 text-6xl mb-6"></i>
-                    <h3 class="text-xl font-bold text-white mb-2">Ready to Diagnose</h3>
-                    <p class="text-slate-500 font-medium max-w-[240px]">Capture or upload multiple angles of the plant for 99.8% AI diagnostic precision.</p>
+            <!-- Right Side: Reports -->
+            <div class="glass-card rounded-[2.5rem] p-8 h-[620px] flex flex-col relative overflow-y-auto custom-scrollbar">
+                <div id="preScan" class="flex-grow flex flex-col items-center justify-center text-center">
+                    <div class="w-24 h-24 bg-white/5 rounded-full flex items-center justify-center mb-8 border border-white/5">
+                        <i class="fas fa-microchip text-slate-700 text-4xl animate-pulse"></i>
+                    </div>
+                    <h3 class="text-2xl font-bold text-white mb-3">Awaiting Scan</h3>
+                    <p class="text-slate-500 font-medium max-w-[280px]">Provide clear imagery of lesions or discoloration for precise agronomic prescriptions.</p>
                 </div>
                 
-                <div id="resultContent" class="hidden w-full text-left">
-                    <div id="wrongInputBadge" class="hidden flex items-center gap-2 mb-4 px-3 py-1.5 rounded-xl bg-red-500/10 border border-red-500/20 text-[10px] font-bold text-red-400">
-                        <i class="fas fa-exclamation-triangle"></i> <span id="wrongInputText">0 inputs were inconsistent</span>
-                    </div>
-
-                    <span class="px-3 py-1 rounded-full bg-brand-500/10 border border-brand-500/20 text-brand-500 text-[10px] font-black uppercase tracking-widest mb-4 inline-block">Consensus Result</span>
-                    <h3 id="diseaseName" class="text-3xl font-black text-white mb-4 leading-tight">...</h3>
-                    
-                    <div class="mb-8">
-                        <div class="flex justify-between text-[10px] font-black uppercase tracking-tighter text-slate-500 mb-2"><span>AI Confidence</span><span id="confVal">0%</span></div>
-                        <div class="h-1.5 w-full bg-slate-800 rounded-full overflow-hidden"><div id="confBar" class="h-full bg-brand-500 transition-all duration-1000" style="width: 0%"></div></div>
-                    </div>
-
-                    <div id="locationBadge" class="hidden flex items-center gap-2 mb-4 px-3 py-1.5 rounded-xl bg-blue-500/10 border border-blue-500/20 text-[10px] font-bold text-blue-400">
-                        <i class="fas fa-location-dot"></i> <span id="locationText">Detecting Location...</span>
-                    </div>
-                    
-                    <div id="severityBadge" class="flex items-center justify-between mb-4 px-4 py-2.5 rounded-2xl bg-white/5 border border-white/10 uppercase tracking-widest text-[10px] font-black">
-                        <div class="flex items-center gap-2">
-                            <i id="sevIcon" class="fas fa-thermometer-half text-brand-500"></i>
-                            <span class="text-slate-500">Severity Level:</span>
+                <div id="resultContent" class="hidden w-full">
+                    <div class="flex justify-between items-center mb-8">
+                         <span class="px-4 py-2 rounded-xl bg-brand-500/10 border border-brand-500/20 text-brand-500 text-[10px] font-black uppercase tracking-[0.2em]">Validated Consensus</span>
+                         <div id="wrongInputBadge" class="hidden flex items-center gap-2 px-3 py-2 rounded-xl bg-red-500/10 border border-red-500/20 text-[10px] font-bold text-red-400">
+                            <i class="fas fa-circle-exclamation"></i> <span id="wrongInputText">Inconsistent data detected</span>
                         </div>
-                        <span id="sevVal" class="text-white">Medium</span>
                     </div>
-                    <div class="p-5 rounded-3xl bg-white/5 border border-white/5 mb-4">
-                        <h4 class="text-[10px] font-black text-brand-500 uppercase tracking-widest mb-2">Methodology</h4>
-                        <p id="methodText" class="text-xs text-slate-500 mb-3 italic">...</p>
-                        <h4 class="text-[10px] font-black text-brand-500 uppercase tracking-widest mb-2">Treatment Plan</h4>
-                        <p id="treatmentText" class="text-sm text-slate-300 leading-relaxed italic mb-4">...</p>
-                        
-                        <div class="pt-4 border-t border-white/5">
-                            <h4 class="text-[10px] font-black text-orange-400 uppercase tracking-widest flex items-center gap-2 mb-2">
-                                <i class="fas fa-shield-virus"></i> Spray Safety Note
+
+                    <h3 id="diseaseName" class="text-4xl font-black text-white mb-8 leading-tight break-words">...</h3>
+                    
+                    <div class="grid grid-cols-2 gap-4 mb-8">
+                        <div class="bg-white/5 border border-white/5 p-5 rounded-3xl">
+                            <div class="flex justify-between text-[10px] font-black uppercase tracking-widest text-slate-500 mb-2"><span>AI Confidence</span><span id="confVal" class="text-brand-500">0%</span></div>
+                            <div class="h-1.5 w-full bg-slate-800 rounded-full overflow-hidden"><div id="confBar" class="h-full bg-brand-500 transition-all duration-1000" style="width: 0%"></div></div>
+                        </div>
+                        <div class="bg-white/5 border border-white/5 p-5 rounded-3xl flex flex-col justify-center">
+                            <div class="flex items-center justify-between">
+                                <span class="text-[10px] font-black uppercase tracking-widest text-slate-500">Infection Stage</span>
+                                <span id="sevVal" class="text-[11px] font-black uppercase text-white px-3 py-1 rounded-lg bg-white/10">...</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div id="locationBadge" class="hidden flex items-center gap-2 mb-8 px-5 py-4 rounded-3xl bg-blue-500/5 border border-blue-500/10 text-[11px] font-bold text-blue-400">
+                        <i class="fas fa-location-dot"></i> <span id="locationText">...</span>
+                    </div>
+                    
+                    <div class="space-y-5 mb-10">
+                        <div class="p-8 rounded-[2rem] bg-white/[0.02] border border-white/5">
+                            <h4 class="text-[10px] font-black text-brand-500 uppercase tracking-[0.3em] mb-4 flex items-center gap-2">
+                                <i class="fas fa-dna text-[10px]"></i> Pathology Profile
                             </h4>
-                            <p id="safetyText" class="text-xs text-slate-400 leading-relaxed italic">...</p>
+                            <p id="methodText" class="text-[11px] text-slate-400 mb-6 font-bold tracking-tight leading-relaxed">...</p>
+                            
+                            <h4 class="text-[10px] font-black text-brand-500 uppercase tracking-[0.3em] mb-4">Agronomic Prescription</h4>
+                            <p id="treatmentText" class="text-sm text-slate-300 leading-relaxed mb-8">...</p>
+                            
+                            <div class="pt-6 border-t border-white/5">
+                                <h4 class="text-[10px] font-black text-orange-400 uppercase tracking-[0.3em] flex items-center gap-2 mb-4">
+                                    <i class="fas fa-shield-virus"></i> Safety Protocol
+                                </h4>
+                                <p id="safetyText" class="text-xs text-slate-400 leading-relaxed italic">...</p>
+                            </div>
                         </div>
-                    </div>
 
-                    <div class="p-5 rounded-3xl bg-brand-500/5 border border-brand-500/10 mb-4">
-                        <div class="flex justify-between items-center">
+                        <div class="p-8 rounded-[2rem] bg-brand-500/[0.03] border border-brand-500/10 flex justify-between items-center">
                             <div>
-                                <h4 class="text-[10px] font-black text-brand-500 uppercase tracking-widest mb-1">Cost Estimate (₹)</h4>
-                                <p id="costText" class="text-xs text-slate-300 font-medium">...</p>
+                                <h4 class="text-[10px] font-black text-brand-500 uppercase tracking-[0.3em] mb-2">Regional Economics</h4>
+                                <p id="costText" class="text-sm text-slate-100 font-bold">...</p>
                             </div>
-                            <div class="w-10 h-10 rounded-full bg-brand-500/10 flex items-center justify-center text-brand-500">
-                                <i class="fas fa-indian-rupee-sign"></i>
+                            <div class="w-14 h-14 rounded-2xl bg-brand-500/10 flex items-center justify-center text-brand-500 text-2xl">
+                                <i class="fas fa-hand-holding-dollar"></i>
                             </div>
                         </div>
-                    </div>
-                    <div class="p-4 rounded-3xl border border-yellow-500/20 bg-yellow-500/5 mb-8">
-                        <div class="flex items-center gap-2 mb-2">
-                            <i class="fas fa-brain text-yellow-400 text-xs"></i>
-                            <h4 class="text-[10px] font-black text-yellow-400 uppercase tracking-widest">Why this prediction?</h4>
+
+                        <div class="p-8 rounded-[2rem] border border-yellow-500/10 bg-yellow-500/[0.02]">
+                            <div class="flex items-center gap-2 mb-4">
+                                <i class="fas fa-brain text-yellow-400 text-xs"></i>
+                                <h4 class="text-[10px] font-black text-yellow-400 uppercase tracking-[0.3em]">AI Visual Evidence</h4>
+                            </div>
+                            <p id="reasonText" class="text-xs text-yellow-100/60 leading-relaxed font-medium">...</p>
                         </div>
-                        <p id="reasonText" class="text-xs text-yellow-200/70 leading-relaxed">...</p>
                     </div>
-                    <button onclick="retake()" class="w-full py-4 rounded-2xl bg-brand-500 text-white font-black uppercase tracking-widest shadow-xl shadow-brand-500/20 hover:bg-brand-600 transition-all">New Scan</button>
+                    
+                    <button onclick="retake()" class="w-full py-6 rounded-[1.5rem] bg-brand-500 text-white font-black uppercase tracking-[0.3em] shadow-2xl shadow-brand-500/20 hover:bg-brand-600 hover:-translate-y-1 transition-all">New Diagnostic Session</button>
                 </div>
             </div>
         </div>
@@ -190,13 +207,13 @@
             const upModeView = document.getElementById('uploadMode');
 
             if (mode === 'camera') {
-                camModeBtn.className = "flex-1 py-2.5 rounded-xl text-xs font-bold transition-all bg-brand-500 text-white shadow-lg";
-                upModeBtn.className = "flex-1 py-2.5 rounded-xl text-xs font-bold transition-all text-slate-400 hover:text-white";
+                camModeBtn.className = "flex-1 py-3 rounded-xl text-xs font-bold transition-all bg-brand-500 text-white shadow-lg";
+                upModeBtn.className = "flex-1 py-3 rounded-xl text-xs font-bold transition-all text-slate-400 hover:text-white";
                 camModeView.classList.remove('hidden');
                 upModeView.classList.add('hidden');
             } else {
-                upModeBtn.className = "flex-1 py-2.5 rounded-xl text-xs font-bold transition-all bg-brand-500 text-white shadow-lg";
-                camModeBtn.className = "flex-1 py-2.5 rounded-xl text-xs font-bold transition-all text-slate-400 hover:text-white";
+                upModeBtn.className = "flex-1 py-3 rounded-xl text-xs font-bold transition-all bg-brand-500 text-white shadow-lg";
+                camModeBtn.className = "flex-1 py-3 rounded-xl text-xs font-bold transition-all text-slate-400 hover:text-white";
                 upModeView.classList.remove('hidden');
                 camModeView.classList.add('hidden');
             }
@@ -240,7 +257,7 @@
             
             imageQueue.forEach((blob, idx) => {
                 const container = document.createElement('div');
-                container.className = "relative group";
+                container.className = "relative group scale-up";
                 
                 const img = document.createElement('img');
                 img.src = URL.createObjectURL(blob);
@@ -248,7 +265,7 @@
                 
                 const removeBtn = document.createElement('button');
                 removeBtn.innerHTML = '<i class="fas fa-times-circle"></i>';
-                removeBtn.className = "absolute -top-2 -right-2 text-red-500 bg-white rounded-full text-xs hidden group-hover:block";
+                removeBtn.className = "absolute -top-2 -right-2 text-red-500 bg-white rounded-full text-xs hidden group-hover:block transition-all";
                 removeBtn.onclick = (e) => { e.stopPropagation(); imageQueue.splice(idx, 1); updateQueueUI(); };
                 
                 container.appendChild(img);
@@ -258,7 +275,7 @@
                     previewQueue.appendChild(container);
                 } else {
                     uploadQueue.appendChild(container.cloneNode(true));
-                    // Re-bind click since cloneNode doesn't keep it
+                    // Re-bind click
                     uploadQueue.lastChild.lastChild.onclick = (e) => { e.stopPropagation(); imageQueue.splice(idx, 1); updateQueueUI(); };
                 }
             });
@@ -293,7 +310,7 @@
             scannerLine.style.display = 'block';
             preScan.classList.add('hidden');
             resultContent.classList.add('hidden');
-            video.classList.add('opacity-50');
+            video.classList.add('opacity-30');
 
             const fd = new FormData();
             imageQueue.forEach(blob => fd.append('files', blob));
@@ -314,10 +331,10 @@
                 const data = await res.json();
                 setTimeout(() => {
                     scannerLine.style.display = 'none';
-                    video.classList.remove('opacity-50');
+                    video.classList.remove('opacity-30');
                     displayResult(data);
-                }, 1500);
-            } catch (err) { alert("Engine unreachable. Check connection."); scannerLine.style.display = 'none'; video.classList.remove('opacity-50'); }
+                }, 2000);
+            } catch (err) { alert("Diagnostic Engine Unreachable."); scannerLine.style.display = 'none'; video.classList.remove('opacity-30'); }
         }
 
         function displayResult(data) {
@@ -325,26 +342,21 @@
             document.getElementById('diseaseName').textContent = data.disease;
             document.getElementById('treatmentText').textContent = data.treatment;
             document.getElementById('methodText').textContent = data.method;
-            document.getElementById('reasonText').textContent = data.reason || 'AI visual pattern analysis used for this diagnosis.';
-            document.getElementById('safetyText').textContent = data.safety || 'Wear gloves and avoid spraying during strong sunlight/wind.';
-            document.getElementById('costText').textContent = data.cost_estimate || 'Estimate pending regional verification.';
+            document.getElementById('reasonText').textContent = data.reason || 'AI neural pattern matching results.';
+            document.getElementById('safetyText').textContent = data.safety || 'Follow chemical SDS and wear protective gear.';
+            document.getElementById('costText').textContent = data.cost_estimate || 'Calculated per regional pricing.';
             document.getElementById('sevVal').textContent = data.severity || 'Medium';
             
-            const wrongBadge = document.getElementById('wrongInputBadge');
             if(data.wrong_inputs > 0) {
-                wrongBadge.classList.remove('hidden');
-                document.getElementById('wrongInputText').textContent = `${data.wrong_inputs} input(s) were wrong/inconsistent among ${data.total_inputs} total.`;
+                document.getElementById('wrongInputBadge').classList.remove('hidden');
+                document.getElementById('wrongInputText').textContent = `${data.wrong_inputs} Inconsistent Inputs`;
             } else {
-                wrongBadge.classList.add('hidden');
+                document.getElementById('wrongInputBadge').classList.add('hidden');
             }
-
-            const sevIcon = document.getElementById('sevIcon');
-            const sevColor = data.severity === 'High' ? 'text-red-500' : (data.severity === 'Low' || data.severity === 'Healthy' ? 'text-green-500' : 'text-yellow-500');
-            sevIcon.className = `fas fa-thermometer-half ${sevColor}`;
             
             if(data.location_name) {
                 document.getElementById('locationBadge').classList.remove('hidden');
-                document.getElementById('locationText').textContent = "Verified for " + data.location_name;
+                document.getElementById('locationText').textContent = "Agronomic validation for " + data.location_name;
             } else {
                 document.getElementById('locationBadge').classList.add('hidden');
             }
@@ -358,9 +370,8 @@
             clearQueue();
             resultContent.classList.add('hidden');
             preScan.classList.remove('hidden');
-            video.classList.remove('hidden', 'opacity-50');
+            video.classList.remove('hidden', 'opacity-30');
         }
-
     </script>
 </body>
 </html>
