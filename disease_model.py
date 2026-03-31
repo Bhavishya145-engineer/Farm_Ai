@@ -20,21 +20,73 @@ KINDWISE_URL = "https://crop.kindwise.com/api/v1/identification"
 # COMPREHENSIVE DISEASE TREATMENT DATABASE
 # Used by all tiers to enrich results with proper treatment plans
 # ---------------------------------------------------------------------------
+# ---------------------------------------------------------------------------
+# COMPREHENSIVE DISEASE TREATMENT DATABASE — Precise Farmer-Grade Instructions
+# All dosages follow Indian Council of Agricultural Research (ICAR) standards
+# ---------------------------------------------------------------------------
 DISEASE_DB = {
-    "rust":           {"treatment": "Apply Mancozeb 75WP (2g/L water) or Propiconazole 25EC (1ml/L). Spray every 10-14 days. Remove infected leaves immediately.", "fertilizer": "Reduce Nitrogen, boost Potassium (K) with MOP at 3kg/acre."},
-    "blight":         {"treatment": "Apply Copper Oxychloride (3g/L) or Metalaxyl + Mancozeb. Remove and burn affected plant parts. Improve drainage.", "fertilizer": "Apply balanced NPK 12-32-16 to boost immunity."},
-    "smut":           {"treatment": "Treat seeds with Carboxin + Thiram (2g/kg seed) before planting. Remove galls before they burst. No cure after infection.", "fertilizer": "Apply Zinc Sulfate (25kg/ha) to reduce susceptibility."},
-    "mosaic":         {"treatment": "No cure. Remove infected plants. Control aphid vectors with Imidacloprid (0.5ml/L). Use virus-resistant varieties.", "fertilizer": "Apply Boron (0.5kg/acre) to boost plant cell wall strength."},
-    "wilt":           {"treatment": "Apply Carbendazim (1g/L) or Trichoderma viride as soil drench. Improve field drainage. Use resistant varieties.", "fertilizer": "Apply Calcium Nitrate to strengthen root systems."},
-    "rot":            {"treatment": "Apply Mancozeb or Copper-based fungicides. Remove infected tissue. Avoid waterlogging. Improve air circulation.", "fertilizer": "Add Phosphorus (P) with DAP to strengthen root health."},
-    "spot":           {"treatment": "Spray Chlorothalonil (2g/L) or Mancozeb 75WP every 14 days. Remove and destroy spotted leaves.", "fertilizer": "Foliar spray of Zinc + Manganese micronutrients."},
-    "mildew":         {"treatment": "Apply Sulfur-based fungicide (3g/L) or Azoxystrobin. Improve air circulation. Avoid overhead irrigation.", "fertilizer": "Reduce Nitrogen (N). Apply Potassium Silicate as foliar spray."},
-    "anthracnose":    {"treatment": "Apply Carbendazim (1g/L) or Copper Hydroxide. Collect and destroy fallen leaves. Avoid overhead irrigation.", "fertilizer": "Apply balanced NPK. Add Calcium foliar spray."},
-    "canker":         {"treatment": "Prune infected branches 15cm below visible infection. Apply Copper Oxychloride paste on cuts. Spray Bordeaux Mixture.", "fertilizer": "Apply Calcium + Boron to prevent cell structure damage."},
-    "healthy":        {"treatment": "No treatment needed. Crop appears healthy. Continue standard agronomic practices and regular monitoring.", "fertilizer": "Maintain balanced NPK schedule as per soil test recommendation."},
-    "deficiency":     {"treatment": "Analyze deficiency type. Apply appropriate micronutrient (Zinc, Iron, Boron, Manganese) as foliar spray.", "fertilizer": "Conduct soil test. Apply missing nutrients — Ferrous Sulfate for iron, Zinc Sulfate for zinc."},
-    "default":        {"treatment": "Consult a local agronomist. As a precaution, apply broad-spectrum fungicide Mancozeb (2g/L water).", "fertilizer": "Apply NPK 15-15-15 as a general health booster."},
+    "rust": {
+        "treatment": "Step 1: Remove and burn all visibly infected leaves. Step 2: Mix Mancozeb 75WP at 2g per litre of water (e.g. 40g per 20L spray tank) and spray the entire crop. Step 3: Alternatively use Propiconazole 25EC at 1ml per litre. Step 4: Repeat spray every 10-14 days for 3 cycles. Step 5: Avoid wetting leaves during evening hours.",
+        "fertilizer": "Reduce Nitrogen (N) — stop urea temporarily. Apply Muriate of Potash (MOP/KCl) at 3kg per acre to harden cell walls and resist fungal spread."
+    },
+    "blight": {
+        "treatment": "Step 1: Uproot and destroy severely infected plants. Step 2: Spray Copper Oxychloride 50WP at 3g per litre of water (60g per 20L tank) covering both leaf surfaces. Step 3: Alternatively, use Metalaxyl 8% + Mancozeb 64WP at 2.5g per litre. Step 4: Repeat every 7 days until symptoms stop spreading. Step 5: Drain waterlogged fields immediately.",
+        "fertilizer": "Apply DAP (Di-Ammonium Phosphate) at 50kg per acre to boost root immunity. Avoid excess Nitrogen."
+    },
+    "smut": {
+        "treatment": "PREVENTION (before planting): Treat seeds with Carboxin 37.5% + Thiram 37.5% at 2g per kg of seed. Rub the powder evenly on the seed surface. AFTER INFECTION: Remove all smut galls immediately before they burst open (to stop spore spread). There is NO chemical cure once infection is established — remove infected plants.",
+        "fertilizer": "Apply Zinc Sulfate at 25kg per hectare to improve plant immunity and reduce susceptibility."
+    },
+    "mosaic": {
+        "treatment": "There is NO chemical cure for mosaic virus. Step 1: Immediately uproot and burn infected plants — do not compost them. Step 2: Control aphid/whitefly vectors by spraying Imidacloprid 17.8SL at 0.5ml per litre of water. Step 3: Use yellow sticky traps @10 per acre. Step 4: Plant virus-resistant varieties in next season.",
+        "fertilizer": "Spray Borax (Boron) at 0.5g per litre as foliar spray to strengthen cell walls and slow virus movement."
+    },
+    "wilt": {
+        "treatment": "Step 1: Remove wilted plants with roots and destroy. Step 2: Drench the root zone with Carbendazim 50WP at 1g per litre of water (apply 200-250ml per plant). Step 3: Alternatively, apply Trichoderma viride or T. harzianum bio-fungicide at 4g per kg soil at planting. Step 4: Avoid waterlogging — ensure proper field drainage.",
+        "fertilizer": "Apply Calcium Nitrate at 2kg per 100L water as soil drench to strengthen root cell walls."
+    },
+    "rot": {
+        "treatment": "Step 1: Cut away and dispose of all rotten tissue. Step 2: Drench with Copper Oxychloride 50WP at 3g per litre or Mancozeb at 2g per litre, applied directly to the affected area and soil. Step 3: Reduce irrigation frequency. Step 4: Improve field drainage — create furrows to allow water run-off. Step 5: Spray Iprodione 50WP at 2g per litre on stored produce.",
+        "fertilizer": "Apply Superphosphate (SSP) at 50kg per acre to strengthen root tissue."
+    },
+    "spot": {
+        "treatment": "Step 1: Remove and burn spotted leaves. Step 2: Spray Chlorothalonil 75WP at 2g per litre of water (40g per 20L tank) covering leaf undersides thoroughly. Step 3: Or use Mancozeb 75WP at 2g per litre. Step 4: Repeat every 14 days for 2-3 applications. Step 5: Avoid overhead irrigation to keep leaves dry.",
+        "fertilizer": "Foliar spray of Zinc Sulfate (0.5g/L) + Manganese Sulfate (0.3g/L) to boost plant immunity."
+    },
+    "mildew": {
+        "treatment": "Step 1: Remove heavily infected leaves. Step 2: Spray Wettable Sulfur 80WP at 3g per litre (60g per 20L tank) or Azoxystrobin 23SC at 1ml per litre. Step 3: Do NOT spray sulfur when temperature exceeds 35°C (risk of phytotoxicity). Step 4: Repeat every 10 days for 3 sprays. Step 5: Improve air circulation by pruning dense canopy.",
+        "fertilizer": "Stop all Nitrogen (urea) fertilizer. Apply Potassium Silicate at 2ml per litre as foliar spray to harden leaf surfaces."
+    },
+    "scorch": {
+        "treatment": "Step 1: This is often caused by the fungus Fabraea maculata or environmental stress. Step 2: Spray Bordeaux Mixture 1% (10g Copper Sulfate CuSO₄ + 10g hydrated lime per litre of water) — mix CuSO₄ in half the water, mix lime separately in other half, then combine slowly). Step 3: Spray every 7-10 days for 3 cycles. Step 4: Remove and burn infected leaves. Step 5: Ensure proper irrigation — avoid drought stress.",
+        "fertilizer": "Apply Calcium Nitrate at 200g per 100L water as foliar spray to strengthen leaf tissue and prevent further scorch."
+    },
+    "anthracnose": {
+        "treatment": "Step 1: Collect and destroy all fallen infected leaves and fruit. Step 2: Spray Carbendazim 50WP at 1g per litre (20g per 20L tank) or Copper Hydroxide 77WP at 2g per litre. Step 3: Repeat every 10-14 days. Step 4: Avoid overhead irrigation. Step 5: Disinfect pruning tools with 10% bleach solution between cuts.",
+        "fertilizer": "Apply NPK 13-0-45 (high potassium) at 2g per litre as foliar spray. Add Calcium Chloride 0.5g/L."
+    },
+    "canker": {
+        "treatment": "Step 1: Prune infected branches at least 15cm below the visible infection point. Step 2: Immediately paint cut surfaces with Bordeaux paste (100g CuSO₄ + 100g lime in 1 litre water, thickened to paste). Step 3: Spray entire tree with Copper Oxychloride 50WP at 3g per litre. Step 4: Sterilize pruning tools between each cut using 70% alcohol or 10% bleach.",
+        "fertilizer": "Apply Calcium (Ca) at 2g/L + Boron (B) at 0.5g/L as foliar spray to prevent cell wall breakdown."
+    },
+    "bordeaux": {
+        "treatment": "Bordeaux Mixture 1% preparation: Dissolve 10g of Copper Sulfate (CuSO₄) in 500ml water. Separately dissolve 10g of hydrated lime in another 500ml of water. Slowly pour the CuSO₄ solution into the lime solution (never the reverse). Test with litmus — should be neutral or slightly alkaline. Apply 1-2 litres per tree, spray every 7-10 days.",
+        "fertilizer": "No additional fertilizer needed if used as preventive treatment."
+    },
+    "healthy": {
+        "treatment": "No treatment needed. Crop appears in good health. Continue regular monitoring every 5-7 days. Maintain standard cultural practices (proper spacing, timely irrigation, weed management).",
+        "fertilizer": "Continue your existing NPK schedule based on soil test results. As a preventive boost, apply NPK 19-19-19 at 2g per litre as foliar spray once a month."
+    },
+    "deficiency": {
+        "treatment": "Iron deficiency (yellowing between veins): Spray Ferrous Sulfate at 2.5g per litre. Zinc deficiency (small leaves, bronzing): Spray Zinc Sulfate at 2g per litre. Magnesium deficiency (older leaves yellow first): Spray Magnesium Sulfate (Epsom salt) at 10g per litre. Apply foliar spray in the morning or evening, not in harsh sunlight.",
+        "fertilizer": "Conduct full soil test to identify deficient nutrients. As interim measure: apply micronutrient mixture (Zn, Fe, Mn, Cu, B) at label dose."
+    },
+    "default": {
+        "treatment": "Symptoms not conclusively matched. As a precaution: Step 1: Remove visibly infected leaves and destroy. Step 2: Spray broad-spectrum fungicide Mancozeb 75WP at 2g per litre of water. Step 3: Observe the crop for 5-7 days. Step 4: If no improvement, consult your local Krishi Vigyan Kendra (KVK) or agricultural extension officer with a sample.",
+        "fertilizer": "Apply NPK 15-15-15 complex fertilizer at 2g per litre as a general health booster foliar spray."
+    },
 }
+
 
 def _get_treatment_from_db(disease_name: str) -> dict:
     """Look up treatment from local database based on disease keywords."""
@@ -84,13 +136,16 @@ def _gemini_predict(image_bytes: bytes, crop: str) -> dict:
 
 Analyze this image of {crop or 'a plant/crop'} and provide a highly accurate diagnosis.
 
-CRITICAL RULES:
-- If the plant/crop looks HEALTHY (green, normal coloring, no visible lesions), report it as "Healthy".
-- If the crop shows MATURITY signs (golden corn, ripened grain), report "Healthy - Mature Crop. Ready for Harvest."
-- If diseased, name the SPECIFIC disease (e.g. "Leaf Rust", "Early Blight", "Powdery Mildew", NOT just "fungicide").
-- Provide a DETAILED step-by-step treatment plan with specific chemical names and doses.
-- Suggest a specific fertilizer recommendation.
-- Assign a confidence percentage based on how clear the symptoms are.
+CRITICAL RULES - follow ALL strictly:
+1. Name the EXACT disease (e.g. "Pear Leaf Scorch", "Wheat Leaf Rust") - NEVER just a symptom or chemical.
+2. If healthy or mature crop (golden grain, green leaves, no lesions) - report "Healthy".
+3. Treatment MUST be step-by-step with:
+   - Exact chemical name AND formulation (e.g. Mancozeb 75WP, Copper Oxychloride 50WP)
+   - Exact dose per litre AND per 20-litre spray tank (e.g. 2g/L = 40g per 20L tank)
+   - Number of applications and interval (e.g. spray every 7-10 days for 3 cycles)
+   - For Bordeaux Mixture: state exactly 10g CuSO4 + 10g hydrated lime per litre of water
+4. Fertilizer: exact product + dose (e.g. MOP at 3kg/acre - NOT vague like 'boost potassium').
+5. Confidence: assign based on clarity of symptoms visible in the image.
 
 Respond ONLY with this exact JSON (no markdown, no extra text):
 {{"disease": "...", "confidence": 0.95, "treatment": "...", "fertilizer": "..."}}"""
@@ -137,17 +192,22 @@ def _groq_predict(image_bytes: bytes, crop: str) -> dict:
     if not GROQ_KEY:
         raise ValueError("X-Missing")
 
-    expert_prompt = f"""You are an expert plant pathologist AI. Diagnose the disease in this image of {crop or 'a plant'}.
+    expert_prompt = f"""You are an expert plant pathologist AI. Diagnose this image of {crop or 'a plant'}.
 
-Rules:
-- If healthy/mature crop (golden grain, green leaves with no spots): disease = "Healthy"
-- If diseased: provide the specific disease name (e.g. "Corn Leaf Blight", "Rice Brown Spot", "Wheat Rust")
-- Give a DETAILED treatment: specific chemical + dosage + application method
-- Give a fertilizer recommendation
-- In 'reason', write 1-2 sentences describing the exact visual symptoms you observed that led to this diagnosis.
+RULES — follow strictly:
+1. Name the SPECIFIC disease (e.g. "Corn Leaf Blight", "Rice Brown Spot") — not just a symptom.
+2. If healthy/mature: disease = "Healthy"
+3. Treatment MUST include:
+   - Chemical name + formulation (e.g. Mancozeb 75WP, Copper Sulfate)
+   - Exact dose: grams or ml per LITRE of water, AND per 20-litre tank
+   - Number of sprays + interval (e.g. "spray every 7-10 days for 3 cycles")
+   - Step-by-step numbered steps
+   - If Bordeaux Mixture: state "10g CuSO4 + 10g hydrated lime per litre of water"
+4. Fertilizer: exact product name + dose (not vague terms like "boost potassium")
+5. Reason: 1-2 sentences on the EXACT visual symptoms you see.
 
-Return ONLY raw JSON (absolutely no markdown, no ```):
-{{"disease": "...", "confidence": 0.9, "treatment": "...", "fertilizer": "...", "reason": "..."}}"""
+Return ONLY raw JSON (no markdown, no ```):
+{{"disease": "...", "confidence": 0.9, "treatment": "Step 1: ... Step 2: ...", "fertilizer": "...", "reason": "..."}}"""
 
     payload = {
         "model": GROQ_MODEL,
