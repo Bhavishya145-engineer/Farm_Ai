@@ -466,7 +466,7 @@ def predict_disease_from_image(image_bytes: bytes, crop: str = None, lat: float 
         else: errs.append(f"{tr['name']}:{tr['err'][:30]}")
 
     if results:
-        # Hierarchical Selection: 1. Groq (Preferred), 2. Gemini, 3. Kindwise
+        # Hierarchical Selection: 1. Groq (Absolute Priority), 2. Gemini, 3. Kindwise
         tier_order = ["Groq", "Gemini", "Kindwise"]
         for tier in tier_order:
             best = next((r for r in results if tier in r.get("method", "")), None)
@@ -475,12 +475,16 @@ def predict_disease_from_image(image_bytes: bytes, crop: str = None, lat: float 
         if not best:
             best = max(results, key=lambda x: x.get("confidence", 0))
 
-        # Add Server Versioning to prove it's the latest update
-        best["server_version"] = "v5.5-Grok-Authority-Active"
+        # 🚀 MANDATORY PRIORITY CONFIRMATION
+        best["disease"] = f"[v5.8 Groq-Priority] {best.get('disease','')}"
         
-        # Always append error statuses if they exist for transparency
+        # Build Status Header
+        groq_status = next((f"[ACTIVE] {r.get('reason','')[:40]}.." for r in results if "Groq" in r.get("method","")), "BYPASSED / FAILED")
+        best["reason"] = f"### GROQ STATUS: {groq_status}\n\n{best.get('reason','')}"
+        
         if errs:
-            best["reason"] = f"{best.get('reason','')}\n[System Status: {', '.join(errs)}]"
+            best["reason"] = f"{best.get('reason','')}\n\n[Full Cluster Errors: {', '.join(errs)}]"
+            
         return enrich(best)
 
     # All APIs failed -> Use Fallback and report errors
