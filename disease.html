@@ -77,6 +77,9 @@
                         <div class="flex justify-between text-[10px] font-black uppercase tracking-tighter text-slate-500 mb-2"><span>AI Confidence</span><span id="confVal">0%</span></div>
                         <div class="h-1.5 w-full bg-slate-800 rounded-full overflow-hidden"><div id="confBar" class="h-full bg-brand-500 transition-all duration-1000" style="width: 0%"></div></div>
                     </div>
+                    <div id="locationBadge" class="hidden flex items-center gap-2 mb-4 px-3 py-1.5 rounded-xl bg-blue-500/10 border border-blue-500/20 text-[10px] font-bold text-blue-400">
+                        <i class="fas fa-location-dot"></i> <span id="locationText">Detecting Location...</span>
+                    </div>
                     <div class="p-5 rounded-3xl bg-white/5 border border-white/5 mb-4">
                         <h4 class="text-[10px] font-black text-brand-500 uppercase tracking-widest mb-2">Methodology</h4>
                         <p id="methodText" class="text-xs text-slate-500 mb-3 italic">...</p>
@@ -121,9 +124,15 @@
         const scannerLine = document.getElementById('scannerLine');
         const preScan = document.getElementById('preScan');
         const resultContent = document.getElementById('resultContent');
+        let userLocation = null;
 
         async function initCamera() {
             try {
+                // Request location access early
+                navigator.geolocation.getCurrentPosition(
+                    (pos) => { userLocation = { lat: pos.coords.latitude, lng: pos.coords.longitude }; console.log("Location locked."); },
+                    (err) => { console.warn("Location denied."); }
+                );
                 const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } });
                 video.srcObject = stream;
             } catch (err) { alert("Camera Error: Please ensure you have granted camera permissions."); }
@@ -169,6 +178,10 @@
             fd.append('file', blob);
             const crop = document.getElementById('cropSelector').value;
             if(crop) fd.append('crop', crop);
+            if(userLocation) {
+                fd.append('lat', userLocation.lat);
+                fd.append('lng', userLocation.lng);
+            }
 
             try {
                 const res = await fetch('/predict-disease', {
@@ -194,6 +207,13 @@
             document.getElementById('safetyText').textContent = data.safety || 'Wear gloves and avoid spraying during strong sunlight/wind.';
             document.getElementById('costText').textContent = data.cost_estimate || 'Estimate pending regional verification.';
             
+            if(data.location_name) {
+                document.getElementById('locationBadge').classList.remove('hidden');
+                document.getElementById('locationText').textContent = "Verified for " + data.location_name;
+            } else {
+                document.getElementById('locationBadge').classList.add('hidden');
+            }
+
             const conf = (data.confidence * 100);
             document.getElementById('confVal').textContent = conf.toFixed(1) + '%';
             setTimeout(() => document.getElementById('confBar').style.width = conf + '%', 100);

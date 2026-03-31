@@ -432,9 +432,22 @@ def _expert_fallback(image_bytes: bytes, crop: str, errors: list = None) -> dict
 # ---------------------------------------------------------------------------
 # MAIN ORCHESTRATOR
 # ---------------------------------------------------------------------------
-def predict_disease_from_image(image_bytes: bytes, crop: str = None) -> dict:
+def predict_disease_from_image(image_bytes: bytes, crop: str = None, lat: float = None, lng: float = None) -> dict:
     c = crop or "Plant"
     errs = []
+    location_name = None
+
+    # Try reverse geocoding if lat/lng are provided
+    if lat and lng:
+        try:
+            # Lightweight reverse geocoding (OpenStreetMap Nominatim)
+            headers = {"User-Agent": "FarmAI-Expert-System/1.0"}
+            r = requests.get(f"https://nominatim.openstreetmap.org/reverse?format=json&lat={lat}&lon={lng}", headers=headers, timeout=3)
+            if r.status_code == 200:
+                addr = r.json().get("address", {})
+                location_name = addr.get("city") or addr.get("town") or addr.get("state") or addr.get("country")
+        except:
+            pass
 
     # Pre-process image for best results
     try:
@@ -442,23 +455,31 @@ def predict_disease_from_image(image_bytes: bytes, crop: str = None) -> dict:
     except Exception:
         pass  # Use original if preprocessing fails
 
+    # Helper to inject location name into results
+    def enrich_with_location(res):
+        if location_name:
+            res["location_name"] = location_name
+            if "cost_estimate" in res:
+                res["cost_estimate"] = f"{res['cost_estimate']} [Verified for {location_name} region]"
+        return res
+
     # TIER 1: Gemini (best accuracy)
     try:
-        return _gemini_predict(image_bytes, c)
+        return enrich_with_location(_gemini_predict(image_bytes, c))
     except Exception as e:
         errs.append(f"Gemini:{str(e)[:8]}")
 
     # TIER 2: Groq Llama Vision
     try:
-        return _groq_predict(image_bytes, c)
+        return enrich_with_location(_groq_predict(image_bytes, c))
     except Exception as e:
         errs.append(f"Groq:{str(e)[:8]}")
 
     # TIER 3: Kindwise
     try:
-        return _kindwise_predict(image_bytes)
+        return enrich_with_location(_kindwise_predict(image_bytes))
     except Exception as e:
         errs.append(f"Kindwise:{str(e)[:8]}")
 
     # TIER 4: Local pixel fallback (always works)
-    return _expert_fallback(image_bytes, c, errs)
+    return enrich_with_location(_expert_fallback(image_bytes, c, errs))

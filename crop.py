@@ -432,11 +432,13 @@ def predict_fertilizer(req: FertilizerRequest, current_user: str = Depends(get_c
 async def predict_disease(
     file: UploadFile = File(...),
     crop: Optional[str] = Form(None),
+    lat: Optional[float] = Form(None),
+    lng: Optional[float] = Form(None),
     current_user: str = Depends(get_current_user)
 ):
     try:
         contents = await file.read()
-        result = predict_disease_from_image(contents, crop=crop or "")
+        result = predict_disease_from_image(contents, crop=crop or "", lat=lat, lng=lng)
         if "error" in result:
             return result
         return {
@@ -444,6 +446,9 @@ async def predict_disease(
             "confidence": result.get("confidence", 0.0),
             "treatment":  result.get("treatment", "No treatment available."),
             "fertilizer": result.get("fertilizer", "No fertilizer recommendation."),
+            "safety":     result.get("safety", ""),
+            "cost_estimate": result.get("cost_estimate", ""),
+            "location_name": result.get("location_name", ""),
             "reason":     result.get("reason", "Diagnosis based on AI visual analysis."),
             "method":     result.get("method", "")
         }
