@@ -466,11 +466,18 @@ def predict_disease_from_image(image_bytes: bytes, crop: str = None, lat: float 
         else: errs.append(f"{tr['name']}:{tr['err'][:30]}")
 
     if results:
-        # Pick the most confident result among the APIs
-        best = max(results, key=lambda x: x.get("confidence", 0))
-        # If confidence is low, add a warning
-        if best.get("confidence", 0) < 0.6:
-            best["reason"] = f"Low-confidence consensus. {best.get('reason','')}"
+        # Hierarchical Selection: 1. Gemini, 2. Groq, 3. Kindwise
+        tier_order = ["Gemini", "Groq", "Kindwise"]
+        for tier in tier_order:
+            best = next((r for r in results if tier in r.get("method", "")), None)
+            if best: break
+        
+        if not best:
+            best = max(results, key=lambda x: x.get("confidence", 0))
+
+        # Always append error statuses if they exist for transparency
+        if errs:
+            best["reason"] = f"{best.get('reason','')}\n[System Status: {', '.join(errs)}]"
         return enrich(best)
 
     # All APIs failed -> Use Fallback and report errors
