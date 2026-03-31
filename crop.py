@@ -444,6 +444,7 @@ async def predict_disease(
             "confidence": result.get("confidence", 0.0),
             "treatment":  result.get("treatment", "No treatment available."),
             "fertilizer": result.get("fertilizer", "No fertilizer recommendation."),
+            "reason":     result.get("reason", "Diagnosis based on AI visual analysis."),
             "method":     result.get("method", "")
         }
     except Exception as e:
@@ -452,8 +453,9 @@ async def predict_disease(
         return {
             "disease": "Error Processing Image",
             "confidence": 0.0,
-            "treatment": f"System encountered an error.",
+            "treatment": "System encountered an error. Please try again.",
             "fertilizer": "",
+            "reason": "An internal error occurred during image analysis.",
             "method": "System Error"
         }
 

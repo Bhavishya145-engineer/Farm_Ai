@@ -117,11 +117,16 @@ Respond ONLY with this exact JSON (no markdown, no extra text):
     if len(treatment) < 30:  # if too short/vague, use DB
         treatment = db["treatment"]
 
+    reason = res.get("reason", "").strip()
+    if not reason:
+        reason = f"AI identified {res['disease']} based on visual pattern analysis of the submitted image."
+
     return {
         "disease": res["disease"],
         "confidence": float(res.get("confidence", 0.93)),
         "treatment": treatment,
         "fertilizer": res.get("fertilizer") or db["fertilizer"],
+        "reason": reason,
         "method": "Gemini 1.5 Flash Expert"
     }
 
@@ -139,9 +144,10 @@ Rules:
 - If diseased: provide the specific disease name (e.g. "Corn Leaf Blight", "Rice Brown Spot", "Wheat Rust")
 - Give a DETAILED treatment: specific chemical + dosage + application method
 - Give a fertilizer recommendation
+- In 'reason', write 1-2 sentences describing the exact visual symptoms you observed that led to this diagnosis.
 
 Return ONLY raw JSON (absolutely no markdown, no ```):
-{{"disease": "...", "confidence": 0.9, "treatment": "...", "fertilizer": "..."}}"""
+{{"disease": "...", "confidence": 0.9, "treatment": "...", "fertilizer": "...", "reason": "..."}}"""
 
     payload = {
         "model": GROQ_MODEL,
@@ -167,11 +173,16 @@ Return ONLY raw JSON (absolutely no markdown, no ```):
     if len(treatment) < 30:
         treatment = db["treatment"]
 
+    reason = res.get("reason", "").strip()
+    if not reason:
+        reason = f"AI detected {res['disease']} based on visual symptom analysis of the crop image."
+
     return {
         "disease": res["disease"],
         "confidence": float(res.get("confidence", 0.88)),
         "treatment": treatment,
         "fertilizer": res.get("fertilizer") or db["fertilizer"],
+        "reason": reason,
         "method": "Groq Llama 4 Expert"
     }
 
@@ -208,11 +219,15 @@ def _kindwise_predict(image_bytes: bytes) -> dict:
     if len(treatment_str) < 20:
         treatment_str = db["treatment"]
 
+    description = details.get("description", {}).get("value", "")
+    reason = description[:200] if description else f"Kindwise Plant Health database matched this image to {disease_name} with {prob*100:.0f}% probability based on visual characteristics."
+
     return {
         "disease": disease_name,
         "confidence": prob,
         "treatment": treatment_str,
         "fertilizer": db["fertilizer"],
+        "reason": reason,
         "method": "Kindwise Plant Health AI"
     }
 
@@ -238,29 +253,41 @@ def _expert_fallback(image_bytes: bytes, crop: str, errors: list = None) -> dict
     if gold_pct > 0.12:
         return {"disease": "Healthy — Mature Crop", "confidence": 0.96,
                 "treatment": "Crop appears to be at maturity stage. Harvest when moisture levels are optimal (14-18% for grains).",
-                "fertilizer": "Harvest-ready. No additional fertilizer required.", "method": "Pixel Vision Fallback"}
+                "fertilizer": "Harvest-ready. No additional fertilizer required.",
+                "reason": f"Image shows {gold_pct*100:.1f}% golden/yellow coloration, consistent with a ripened, harvest-ready grain crop. No disease lesions detected.",
+                "method": "Pixel Vision Fallback"}
     if dark_pct > 0.06 and rust_pct > 0.03:
         db = DISEASE_DB["rust"]
         return {"disease": "Foliar Rust / Fungal Lesions", "confidence": 0.82,
-                "treatment": db["treatment"], "fertilizer": db["fertilizer"], "method": "Pixel Vision Fallback"}
+                "treatment": db["treatment"], "fertilizer": db["fertilizer"],
+                "reason": f"Detected {rust_pct*100:.1f}% orange/rust-colored pixels alongside {dark_pct*100:.1f}% dark necrotic areas, indicating active fungal rust infection on leaf surfaces.",
+                "method": "Pixel Vision Fallback"}
     if yellow_pct > 0.10 and green_pct < 0.35:
         db = DISEASE_DB["deficiency"]
         return {"disease": "Nutrient Deficiency / Chlorosis", "confidence": 0.78,
-                "treatment": db["treatment"], "fertilizer": db["fertilizer"], "method": "Pixel Vision Fallback"}
+                "treatment": db["treatment"], "fertilizer": db["fertilizer"],
+                "reason": f"Image shows {yellow_pct*100:.1f}% yellowing with reduced green pigmentation ({green_pct*100:.1f}%), a hallmark of chlorosis caused by nutrient deficiency (likely Nitrogen, Iron, or Magnesium).",
+                "method": "Pixel Vision Fallback"}
     if rust_pct > 0.008:
         db = DISEASE_DB["spot"]
         return {"disease": "Leaf Spot / Blight Symptoms", "confidence": 0.75,
-                "treatment": db["treatment"], "fertilizer": db["fertilizer"], "method": "Pixel Vision Fallback"}
+                "treatment": db["treatment"], "fertilizer": db["fertilizer"],
+                "reason": f"Detected {rust_pct*100:.2f}% orange-brown spot patterns on the leaf surface, suggesting early-stage fungal or bacterial leaf spot infection.",
+                "method": "Pixel Vision Fallback"}
     if green_pct > 0.50:
         db = DISEASE_DB["healthy"]
         return {"disease": "Healthy", "confidence": 0.88,
                 "treatment": f"{db['treatment']} {err_tag}",
-                "fertilizer": db["fertilizer"], "method": "Pixel Vision Fallback"}
+                "fertilizer": db["fertilizer"],
+                "reason": f"Image is dominated by {green_pct*100:.1f}% healthy green pigmentation with no significant discoloration, necrosis, or lesion patterns detected.",
+                "method": "Pixel Vision Fallback"}
 
     db = DISEASE_DB["default"]
     return {"disease": "Inconclusive — Requires Field Inspection", "confidence": 0.55,
             "treatment": f"{db['treatment']} {err_tag}",
-            "fertilizer": db["fertilizer"], "method": "Pixel Vision Fallback"}
+            "fertilizer": db["fertilizer"],
+            "reason": "Image pixel analysis returned mixed signals. No dominant pattern matched known disease signatures. A physical field inspection by an agronomist is recommended.",
+            "method": "Pixel Vision Fallback"}
 
 # ---------------------------------------------------------------------------
 # MAIN ORCHESTRATOR
