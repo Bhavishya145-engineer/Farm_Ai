@@ -145,7 +145,7 @@
                 <!-- Username -->
                 <div>
                     <label class="block text-sm font-semibold text-slate-300 mb-2" for="username">Username</label>
-                    <input type="text" id="username" required
+                    <input type="text" id="username" name="username" autocomplete="username" required
                         class="input-field w-full px-4 py-3 rounded-xl text-white outline-none"
                         placeholder="Choose a unique username">
                 </div>
@@ -153,7 +153,7 @@
                 <!-- Email -->
                 <div>
                     <label class="block text-sm font-semibold text-slate-300 mb-2" for="email">Email Address</label>
-                    <input type="email" id="email" required
+                    <input type="email" id="email" name="email" autocomplete="email" required
                         class="input-field w-full px-4 py-3 rounded-xl text-white outline-none"
                         placeholder="your@email.com">
                 </div>
@@ -162,7 +162,7 @@
                 <div>
                     <label class="block text-sm font-semibold text-slate-300 mb-2" for="password">Password</label>
                     <div class="relative">
-                        <input type="password" id="password" required
+                        <input type="password" id="password" name="password" autocomplete="new-password" required
                             class="input-field w-full px-4 py-3 pr-12 rounded-xl text-white outline-none"
                             placeholder="••••••••" oninput="checkStrength(this.value)">
                         <button type="button" onclick="togglePass('password', this)"
@@ -187,7 +187,7 @@
                 <div>
                     <label class="block text-sm font-semibold text-slate-300 mb-2" for="confirmPassword">Confirm Password</label>
                     <div class="relative">
-                        <input type="password" id="confirmPassword" required
+                        <input type="password" id="confirmPassword" name="confirmPassword" autocomplete="new-password" required
                             class="input-field w-full px-4 py-3 pr-12 rounded-xl text-white outline-none"
                             placeholder="••••••••">
                         <button type="button" onclick="togglePass('confirmPassword', this)"
@@ -206,7 +206,7 @@
                             <i class="fas fa-location-crosshairs"></i> Auto-Detect
                         </button>
                     </label>
-                    <textarea id="address" rows="2"
+                    <textarea id="address" name="address" autocomplete="street-address" rows="2"
                         class="input-field w-full px-4 py-3 rounded-xl text-white outline-none"
                         placeholder="e.g. 124 Rural Valley, District, State"></textarea>
                 </div>
@@ -221,7 +221,7 @@
                             <label for="profilePic"
                                 class="absolute inset-0 flex items-center justify-center bg-black/40 rounded-xl opacity-0 group-hover:opacity-100 cursor-pointer transition-all">
                                 <i class="fas fa-camera text-white text-sm"></i>
-                                <input type="file" id="profilePic" accept="image/*" class="hidden"
+                                <input type="file" id="profilePic" name="profilePic" accept="image/*" class="hidden"
                                     onchange="previewImage(this)">
                             </label>
                         </div>
