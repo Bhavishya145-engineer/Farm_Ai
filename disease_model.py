@@ -13,7 +13,7 @@ GROQ_KEY     = os.getenv("GROK_API_KEY", "").strip()
 
 GEMINI_URL   = "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent"
 GROQ_URL     = "https://api.groq.com/openai/v1/chat/completions"
-GROQ_MODEL   = "meta-llama/llama-4-scout-17b-16e-instruct"
+GROQ_MODEL   = "llama-3.2-11b-vision-preview"
 KINDWISE_URL = "https://crop.kindwise.com/api/v1/identification"
 
 # ---------------------------------------------------------------------------
@@ -181,27 +181,32 @@ def _gemini_predict(image_bytes: bytes, crop: str) -> dict:
     if not GEMINI_KEY:
         raise ValueError("G-Missing")
 
-    expert_prompt = f"""You are a senior plant pathologist and agronomist AI with 20+ years of expertise.
+    expert_prompt = f"""You are a world-class Plant Pathologist AI.
     Analyze the provided image of a {crop if crop else 'crop'} and provide a precise diagnosis.
+    
+    STRICT DIAGNOSTIC CONSTRAINTS:
+    - CATEGORIZATION: If vibrant green, well-formed, and no lesions -> "Healthy".
+    - PART AWARENESS: Distinguish between Leaf, Head/Ear, Stem, and Fruit. 
+    - YELLOW RUST WARNING: Naturally ripening/maturing grain heads (turning yellow/golden) are NOT Yellow Rust. Yellow Rust presents as distinct yellow pustule stripes on leaves or chaff. Do not confuse maturity with rust.
+    - SMUT DETECTION: Black powdery heads in wheat/grain = "Loose Smut".
+    
     Requirements:
-    1. Identify the disease name with scientific precision.
-    2. Perform a morphological analysis: Describe lesion shape, color, and distribution (e.g. pustules, chlorotic halos).
-    3. Determine the infection stage (Early/Medium/Late).
-    4. Provide a treatment plan including chemical names and precise dosages (e.g. 2g/L).
-    5. Provide a safety note for spraying.
-    6. Estimate the total treatment cost per acre in INR (₹) based on Indian regional rates.
-    7. Explain the 'Why': What specific visual markers lead to this diagnosis?
+    1. Identify EXACT Scientific + Common Name.
+    2. Morphological Analysis: Lesion shape, colors, and specific distribution.
+    3. Infection Stage: Early/Medium/Late.
+    4. Precise Treatment: Chemicals (e.g. Propiconazole) + Dosage (e.g. 2ml/L).
+    5. Spray Safety & Economic Estimate in INR (₹).
 
-    Return ONLY a JSON object with this exact structure:
+    Return ONLY a JSON object:
     {{
       "disease": "Exact Name",
       "confidence": 0.95,
       "severity": "Early/Medium/Late Infection",
       "method": "Neural Morphological Analysis",
-      "treatment": "Step-by-step treatment plan",
-      "safety": "Spray safety instructions",
-      "cost_estimate": "Detailed cost breakdown in INR (₹) per acre",
-      "reason": "Evidence-based reasoning from morphological markers"
+      "treatment": "Detailed protocol",
+      "safety": "Safety protocol",
+      "cost_estimate": "₹... per acre",
+      "reason": "Evidence-based morphological reasoning"
     }}
     """
 
@@ -258,22 +263,15 @@ def _groq_predict(image_bytes: bytes, crop: str) -> dict:
 
     expert_prompt = f"""You are an expert plant pathologist AI. Diagnose this image of {crop or 'a plant'}.
 
-RULES — follow strictly:
-1. Name the SPECIFIC disease (e.g. "Corn Leaf Blight", "Rice Brown Spot") — not just a symptom.
-2. If healthy/mature: disease = "Healthy"
-3. Treatment MUST include:
-   - Chemical name + formulation (e.g. Mancozeb 75WP, Copper Sulfate)
-   - Exact dose: grams or ml per LITRE of water, AND per 20-litre tank
-   - Spray TIMING: when to begin (e.g. "begin spraying early in season before symptoms")
-   - Alternative fungicide for rotation (e.g. Carbendazim 50WP or Chlorothalonil 75WP)
-   - Environmental advice: avoid overhead irrigation, ensure air circulation
-   - Correct scientific name of the pathogen (e.g. Venturia pyrina NOT pirina)
-   - If Bordeaux Mixture: state "10g CuSO4 + 10g hydrated lime per litre of water"
-4. Fertilizer: exact product name + dose (not vague terms like "boost potassium")
-5. Reason: use correct scientific name of pathogen. 1-2 sentences on exact visual symptoms.
-
-Return ONLY raw JSON (no markdown, no ```):
-{{"disease": "...", "confidence": 0.9, "severity": "Low/Medium/High", "treatment": "Step 1: ... Step 2: ...", "fertilizer": "...", "safety": "Wear gloves. Spray early morning/evening. Avoid sunlight and wind.", "cost_estimate": "Chemical (pack size) ≈ ₹XX. Per spray ≈ ₹XX. Full treatment for 1 acre ≈ ₹XXX.", "reason": "..."}}"""
+    STRICT RULES:
+    1. If the crop is green and lush with no visible lesions/spots -> disease = "Healthy".
+    2. Do NOT guess a leaf disease (like Rust) if the image only shows the Grain Head/Ear unless symptoms are obvious on the head itself.
+    3. Name the SPECIFIC disease (e.g. "Wheat Loose Smut", "Rice Blast") — not just symptoms.
+    4. Treatment MUST include chemical names (e.g. Propiconazole 25EC), exact doses (e.g. 2ml/L), and spray timing.
+    5. Fertilizer: exact product + dose.
+    
+    Return ONLY raw JSON (no markdown):
+    {{"disease": "...", "confidence": 0.9, "severity": "Low/Medium/High", "treatment": "...", "fertilizer": "...", "safety": "...", "cost_estimate": "₹...", "reason": "Explain EXACT visual symptoms found."}}"""
 
     payload = {
         "model": GROQ_MODEL,
@@ -454,7 +452,7 @@ def predict_disease_from_image(image_bytes: bytes, crop: str = None, lat: float 
             r = requests.get(f"https://nominatim.openstreetmap.org/reverse?format=json&lat={lat}&lon={lng}", headers=headers, timeout=3)
             if r.status_code == 200:
                 addr = r.json().get("address", {})
-                location_name = addr.get("city") or addr.get("town") or addr.get("state") or addr.get("country")
+                location_name = addr.get("village") or addr.get("suburb") or addr.get("city_district") or addr.get("town") or addr.get("city") or addr.get("county") or addr.get("state")
         except:
             pass
 
