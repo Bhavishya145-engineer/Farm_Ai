@@ -434,17 +434,28 @@ async def predict_disease(
     crop: Optional[str] = Form(None),
     current_user: str = Depends(get_current_user)
 ):
-    contents = await file.read()
-    result = predict_disease_from_image(contents, crop=crop or "")
-    if "error" in result:
-        return result
-    return {
-        "disease":    result["disease"],
-        "confidence": result["confidence"],
-        "treatment":  result["treatment"],
-        "fertilizer": result["fertilizer"],
-        "method":     result.get("method", "")
-    }
+    try:
+        contents = await file.read()
+        result = predict_disease_from_image(contents, crop=crop or "")
+        if "error" in result:
+            return result
+        return {
+            "disease":    result.get("disease", "Unknown"),
+            "confidence": result.get("confidence", 0.0),
+            "treatment":  result.get("treatment", "No treatment available."),
+            "fertilizer": result.get("fertilizer", "No fertilizer recommendation."),
+            "method":     result.get("method", "")
+        }
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        return {
+            "disease": "Error Processing Image",
+            "confidence": 0.0,
+            "treatment": f"System encountered an error.",
+            "fertilizer": "",
+            "method": "System Error"
+        }
 
 # ----------------------------------------
 # CHATBOT ROUTE (Grok API)
