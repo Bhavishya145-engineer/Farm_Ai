@@ -6,7 +6,7 @@ from PIL import Image
 import numpy as np
 from dotenv import load_dotenv
 
-SERVER_VERSION = "v6.2-Grok-Repair-Live"
+SERVER_VERSION = "v6.5-Network-Audit-Active"
 
 load_dotenv()
 
@@ -492,7 +492,15 @@ def predict_disease_from_image(image_bytes: bytes, crop: str = None, lat: float 
         
         # Build Status Header
         groq_status = next((f"[ACTIVE] {r.get('reason','')[:40]}.." for r in results if "Groq" in r.get("method","")), "BYPASSED / FAILED")
-        best["reason"] = f"### AUTH-CHECK: {SERVER_VERSION}\n### GROK STATUS: {groq_status}\n\n{best.get('reason','')}"
+        
+        # 🕵️ NETWORK DIAGNOSTIC SUMMARY
+        diag = "### NETWORK DIAGNOSTIC: "
+        if any("404" in e or "Connection" in e or "Timeout" in e for e in errs):
+            diag += "Cloud AI (Gemini/Grok) CONNECTION BLOCKED by your local network/firewall! Try a different internet connection."
+        else:
+            diag += "Connection Clear."
+
+        best["reason"] = f"{diag}\n### AUTH-CHECK: {SERVER_VERSION}\n### GROK STATUS: {groq_status}\n\n{best.get('reason','')}"
         
         if errs:
             best["reason"] = f"{best.get('reason','')}\n\n[Full Cluster Errors: {', '.join(errs)}]"
