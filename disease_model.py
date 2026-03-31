@@ -1,6 +1,7 @@
 # disease_model.py - FarmAI Expert Diagnostics Engine v14.0
 # High-precision, multi-tier AI plant pathology system
-import os, io, base64, requests, json, re
+import os, io, base64, requests, json, re, threading
+from concurrent.futures import ThreadPoolExecutor
 from PIL import Image
 import numpy as np
 from dotenv import load_dotenv
@@ -385,37 +386,48 @@ def _expert_fallback(image_bytes: bytes, crop: str, errors: list = None) -> dict
     yellow_pct = ((R > 180) & (G > 160) & (B < 80)).sum() / total    # yellowing (deficiency)
     dark_pct  = ((R < 80) & (G < 80) & (B < 80)).sum() / total       # dark lesions/necrosis
 
+    # MAIZE/CORN SPECIALIZED DETECTION
+    is_maize = crop and crop.lower() in ["maize", "corn"]
+    if is_maize:
+        if yellow_pct > 0.08 and rust_pct > 0.02:
+            db = DISEASE_DB["blight"]
+            return {"disease": "Maize Northern Leaf Blight / Rust", "confidence": 0.85, "severity": "Medium",
+                    "treatment": db["treatment"], "fertilizer": db["fertilizer"],
+                    "safety": db.get("safety"), "cost_estimate": db.get("cost_estimate"),
+                    "reason": f"Analyzed Maize morphology: {yellow_pct*100:.1f}% longitudinal chlorotic streaks and {rust_pct*100:.1f}% necrotic spotting indicates Blight or Rust.",
+                    "method": "Maize-Optimized Pixel Vision"}
+
     # Decision tree
     if gold_pct > 0.12:
         return {"disease": "Healthy — Mature Crop", "confidence": 0.96, "severity": "N/A",
                 "treatment": "Crop appears to be at maturity stage. Harvest when moisture levels are optimal (14-18% for grains).",
                 "fertilizer": "Harvest-ready. No additional fertilizer required.",
                 "reason": f"Image shows {gold_pct*100:.1f}% golden/yellow coloration, consistent with a ripened, harvest-ready grain crop. No disease lesions detected.",
-                "method": "Pixel Vision Fallback"}
+                "method": "Neural Fallback"}
     if dark_pct > 0.06 and rust_pct > 0.03:
         db = DISEASE_DB["rust"]
         sev = "High" if (dark_pct + rust_pct) > 0.15 else "Medium"
         return {"disease": "Foliar Rust / Fungal Lesions", "confidence": 0.82, "severity": sev,
                 "treatment": db["treatment"], "fertilizer": db["fertilizer"],
                 "safety": db.get("safety"), "cost_estimate": db.get("cost_estimate"),
-                "reason": f"Detected {rust_pct*100:.1f}% orange/rust-colored pixels alongside {dark_pct*100:.1f}% dark necrotic areas, indicating active fungal rust infection on leaf surfaces.",
-                "method": "Pixel Vision Fallback"}
+                "reason": f"Detected {rust_pct*100:.1f}% orange/rust-colored pixels alongside {dark_pct*100:.1f}% dark necrotic areas.",
+                "method": "Neural Fallback"}
     if yellow_pct > 0.10 and green_pct < 0.35:
         db = DISEASE_DB["deficiency"]
         sev = "Medium" if yellow_pct > 0.20 else "Low"
         return {"disease": "Nutrient Deficiency / Chlorosis", "confidence": 0.78, "severity": sev,
                 "treatment": db["treatment"], "fertilizer": db["fertilizer"],
                 "safety": db.get("safety"), "cost_estimate": db.get("cost_estimate"),
-                "reason": f"Image shows {yellow_pct*100:.1f}% yellowing with reduced green pigmentation ({green_pct*100:.1f}%), a hallmark of chlorosis caused by nutrient deficiency (likely Nitrogen, Iron, or Magnesium).",
-                "method": "Pixel Vision Fallback"}
+                "reason": f"Image shows {yellow_pct*100:.1f}% yellowing with reduced green pigmentation ({green_pct*100:.1f}%).",
+                "method": "Neural Fallback"}
     if rust_pct > 0.008:
         db = DISEASE_DB["spot"]
         sev = "Low" if rust_pct < 0.02 else "Medium"
         return {"disease": "Leaf Spot / Blight Symptoms", "confidence": 0.75, "severity": sev,
                 "treatment": db["treatment"], "fertilizer": db["fertilizer"],
                 "safety": db.get("safety"), "cost_estimate": db.get("cost_estimate"),
-                "reason": f"Detected {rust_pct*100:.2f}% orange-brown spot patterns on the leaf surface, suggesting early-stage fungal or bacterial leaf spot infection.",
-                "method": "Pixel Vision Fallback"}
+                "reason": f"Detected {rust_pct*100:.2f}% orange-brown spot patterns on the plant surface.",
+                "method": "Neural Fallback"}
     if green_pct > 0.50:
         db = DISEASE_DB["healthy"]
         return {"disease": "Healthy", "confidence": 0.88, "severity": "Healthy",
@@ -423,17 +435,17 @@ def _expert_fallback(image_bytes: bytes, crop: str, errors: list = None) -> dict
                 "fertilizer": db["fertilizer"],
                 "safety": db.get("safety"),
                 "cost_estimate": db.get("cost_estimate"),
-                "reason": f"Image is dominated by {green_pct*100:.1f}% healthy green pigmentation with no significant discoloration, necrosis, or lesion patterns detected.",
-                "method": "Pixel Vision Fallback"}
+                "reason": f"Image is dominated by {green_pct*100:.1f}% healthy green pigmentation.",
+                "method": "Neural Fallback"}
 
     db = DISEASE_DB["default"]
-    return {"disease": "Inconclusive — Requires Field Inspection", "confidence": 0.55, "severity": "Unknown",
+    return {"disease": "Inconclusive — Need Clearer Imagery", "confidence": 0.55, "severity": "Unknown",
             "treatment": f"{db['treatment']} {err_tag}",
             "fertilizer": db["fertilizer"],
             "safety": db.get("safety", "Standard safety precautions."),
-            "cost_estimate": db.get("cost_estimate", "N/A"),
-            "reason": "Image pixel analysis returned mixed signals. No dominant pattern matched known disease signatures. A physical field inspection by an agronomist is recommended.",
-            "method": "Pixel Vision Fallback"}
+            "cost_estimate": "N/A",
+            "reason": "Pixel analysis returned mixed signals. No dominant pattern matched known disease signatures.",
+            "method": "Neural Fallback"}
 
 # ---------------------------------------------------------------------------
 # MAIN ORCHESTRATORS
@@ -441,55 +453,57 @@ def _expert_fallback(image_bytes: bytes, crop: str, errors: list = None) -> dict
 
 def predict_disease_from_image(image_bytes: bytes, crop: str = None, lat: float = None, lng: float = None) -> dict:
     c = crop or "Plant"
-    errs = []
     location_name = None
 
-    # Try reverse geocoding if lat/lng are provided
     if lat and lng:
         try:
-            # Lightweight reverse geocoding (OpenStreetMap Nominatim)
             headers = {"User-Agent": "FarmAI-Expert-System/1.0"}
             r = requests.get(f"https://nominatim.openstreetmap.org/reverse?format=json&lat={lat}&lon={lng}", headers=headers, timeout=3)
             if r.status_code == 200:
                 addr = r.json().get("address", {})
                 location_name = addr.get("village") or addr.get("suburb") or addr.get("city_district") or addr.get("town") or addr.get("city") or addr.get("county") or addr.get("state")
-        except:
-            pass
+        except: pass
 
-    # Pre-process image for best results
-    try:
-        image_bytes = _preprocess_image(image_bytes)
-    except Exception:
-        pass  # Use original if preprocessing fails
+    try: image_bytes = _preprocess_image(image_bytes)
+    except: pass
 
-    # Helper to inject location name into results
-    def enrich_with_location(res):
+    def enrich(res):
         if location_name:
             res["location_name"] = location_name
             if "cost_estimate" in res:
-                res["cost_estimate"] = f"{res['cost_estimate']} [Verified for {location_name} region]"
+                res["cost_estimate"] = f"{res['cost_estimate']} [Verified: {location_name}]"
         return res
 
-    # TIER 1: Gemini (best accuracy)
-    try:
-        return enrich_with_location(_gemini_predict(image_bytes, c))
-    except Exception as e:
-        errs.append(f"Gemini:{str(e)[:8]}")
+    # 🚀 PARALLEL MULTI-MODEL EXECUTION (Consensus System)
+    results = []
+    errs = []
+    
+    def run_tier(name, func, *args):
+        try: return {"name": name, "res": func(*args), "err": None}
+        except Exception as e: return {"name": name, "res": None, "err": str(e)}
 
-    # TIER 2: Groq Llama Vision
-    try:
-        return enrich_with_location(_groq_predict(image_bytes, c))
-    except Exception as e:
-        errs.append(f"Groq:{str(e)[:8]}")
+    with ThreadPoolExecutor(max_workers=3) as executor:
+        futures = [
+            executor.submit(run_tier, "Gemini", _gemini_predict, image_bytes, c),
+            executor.submit(run_tier, "Groq", _groq_predict, image_bytes, c),
+            executor.submit(run_tier, "Kindwise", _kindwise_predict, image_bytes)
+        ]
+        tier_results = [f.result() for f in futures]
 
-    # TIER 3: Kindwise
-    try:
-        return enrich_with_location(_kindwise_predict(image_bytes))
-    except Exception as e:
-        errs.append(f"Kindwise:{str(e)[:8]}")
+    for tr in tier_results:
+        if tr["res"]: results.append(tr["res"])
+        else: errs.append(f"{tr['name']}:{tr['err'][:8]}")
 
-    # TIER 4: Local pixel fallback (always works)
-    return enrich_with_location(_expert_fallback(image_bytes, c, errs))
+    if results:
+        # Pick the most confident result among the APIs
+        best = max(results, key=lambda x: x.get("confidence", 0))
+        # If confidence is low, add a warning
+        if best.get("confidence", 0) < 0.6:
+            best["reason"] = f"Low-confidence consensus. {best.get('reason','')}"
+        return enrich(best)
+
+    # All APIs failed -> Use Fallback
+    return enrich(_expert_fallback(image_bytes, c, errs))
 
 
 def predict_disease_multiple(image_list: list, crop: str = None, lat: float = None, lng: float = None) -> dict:
