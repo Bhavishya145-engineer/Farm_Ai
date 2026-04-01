@@ -755,9 +755,9 @@ Be specific and practical."""
         return {"reply": "Chatbot API key not configured."}
     try:
         resp = http_requests.post(
-            "https://api.x.ai/v1/chat/completions",
+            "https://api.groq.com/openai/v1/chat/completions",
             headers={"Authorization": f"Bearer {GROK_API_KEY}", "Content-Type": "application/json"},
-            json={"model": "grok-vision-beta",
+            json={"model": "llama-3.3-70b-versatile",
                   "messages": [{"role": "system", "content": SYSTEM_PROMPT}, {"role": "user", "content": user_msg}],
                   "max_tokens": 1500, "temperature": 0.5},
             timeout=20
