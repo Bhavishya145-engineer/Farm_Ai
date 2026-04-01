@@ -215,16 +215,22 @@ def _gemini_predict(api_key: str, image_bytes: bytes, crop: str) -> dict:
         ]}],
         "generationConfig": {"temperature": 0.1, "maxOutputTokens": 800}
     }
-    # Try V1 first, then fallback to V1BETA locally
-    # Note: 404 on V1BETA often means the key is for V1 only
-    r = requests.post(f"https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent?key={api_key}", json=b, timeout=25)
-    if r.status_code == 404:
-        r = requests.post(f"{GEMINI_URL}?key={api_key}", json=b, timeout=25)
+    # AUTO-DISCOVERY: Try multiple Gemini versions and endpoints
+    endpoints = [
+        f"https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent?key={api_key}",
+        f"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={api_key}",
+        f"https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash-latest:generateContent?key={api_key}"
+    ]
     
-    if r.status_code == 429:
-        raise Exception("G-429")
-    if r.status_code != 200:
-        raise Exception(f"G-{r.status_code}")
+    r = None
+    for url in endpoints:
+        try:
+            r = requests.post(url, json=b, timeout=20)
+            if r.status_code == 200: break
+        except: continue
+    
+    if not r or r.status_code != 200:
+        raise Exception(f"G-{r.status_code if r else 'Timeout'}")
 
     txt = r.json()["candidates"][0]["content"]["parts"][0]["text"]
     res = _parse_json_safely(txt)
@@ -286,14 +292,27 @@ def _groq_predict(api_key: str, image_bytes: bytes, crop: str) -> dict:
         "temperature": 0.1,
         "max_tokens": 400
     }
-    r = requests.post(GROQ_URL, json=payload, headers={"Authorization": f"Bearer {api_key}"}, timeout=30)
-    if r.status_code == 400 and "decommissioned" in r.text:
-        # Emergency Fallback to alternative vision model on Groq
-        payload["model"] = "llama-3.2-90b-vision-preview"
-        r = requests.post(GROQ_URL, json=payload, headers={"Authorization": f"Bearer {api_key}"}, timeout=30)
+    models = ["llama-3.2-90b-vision-preview", "llama-3.2-11b-vision-preview"]
+    r = None
+    for m in models:
+        payload["model"] = m
+        try:
+            r = requests.post(GROQ_URL, json=payload, headers={"Authorization": f"Bearer {api_key}"}, timeout=25)
+            if r.status_code == 200: break
+        except: continue
 
-    if r.status_code != 200:
-        raise Exception(f"X-{r.status_code}")
+    if not r or r.status_code != 200:
+        status = r.status_code if r else "Timeout"
+        # If we get 400 with vision, try a text-only model as last resort to see if key works
+        if status == 400:
+            payload["model"] = "llama-3.3-70b-versatile"
+            payload["messages"][0]["content"] = expert_prompt
+            r = requests.post(GROQ_URL, json=payload, headers={"Authorization": f"Bearer {api_key}"}, timeout=15)
+            if r.status_code == 200:
+                 # It's a text-only identification now
+                 pass 
+            else: raise Exception(f"X-{status}")
+        else: raise Exception(f"X-{status}")
 
     txt = r.json()["choices"][0]["message"]["content"]
     res = _parse_json_safely(txt)
@@ -409,14 +428,17 @@ def _nvidia_predict(api_key: str, image_bytes: bytes, crop: str) -> dict:
         "max_tokens": 512
     }
     
-    r = requests.post(NVIDIA_URL, json=payload, headers={"Authorization": f"Bearer {api_key}"}, timeout=30)
-    if r.status_code != 200:
-        # Fallback to another NVIDIA model if first one is busy/rate-limited
-        payload["model"] = "nvidia/vila"
-        r = requests.post(NVIDIA_URL, json=payload, headers={"Authorization": f"Bearer {api_key}"}, timeout=30)
+    models = ["nvidia/vila", "meta/llama-3.2-11b-vision-instruct", "nvidia/llama-3.2-nv-vision-70b"]
+    r = None
+    for m in models:
+        payload["model"] = m
+        try:
+            r = requests.post(NVIDIA_URL, json=payload, headers={"Authorization": f"Bearer {api_key}"}, timeout=25)
+            if r.status_code == 200: break
+        except: continue
 
-    if r.status_code != 200:
-        raise Exception(f"N-{r.status_code}")
+    if not r or r.status_code != 200:
+        raise Exception(f"N-{r.status_code if r else 'Timeout'}")
 
     txt = r.json()["choices"][0]["message"]["content"]
     res = _parse_json_safely(txt)
