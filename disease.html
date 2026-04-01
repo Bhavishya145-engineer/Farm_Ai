@@ -183,10 +183,28 @@
                             
                             <div class="flex flex-col md:flex-row gap-3">
                                 <select id="aiLang" class="flex-1 bg-slate-800 text-white rounded-xl p-4 text-sm font-bold border border-slate-700 outline-none">
-                                    <option value="hi">हिंदी (Hindi)</option>
-                                    <option value="en">English (English)</option>
-                                    <option value="mr">मराठी (Marathi)</option>
-                                    <option value="te">తెలుగు (Telugu)</option>
+                                    <optgroup label="Indian Languages">
+                                        <option value="hi">हिंदी (Hindi)</option>
+                                        <option value="mr">मराठी (Marathi)</option>
+                                        <option value="te">తెలుగు (Telugu)</option>
+                                        <option value="ta">தமிழ் (Tamil)</option>
+                                        <option value="bn">বাংলা (Bengali)</option>
+                                        <option value="gu">ગુજરાતી (Gujarati)</option>
+                                        <option value="kn">ಕನ್ನಡ (Kannada)</option>
+                                        <option value="ml">മലയാളം (Malayalam)</option>
+                                        <option value="pa">ਪੰਜਾਬੀ (Punjabi)</option>
+                                        <option value="ur">اردو (Urdu)</option>
+                                    </optgroup>
+                                    <optgroup label="Global Languages">
+                                        <option value="en">English</option>
+                                        <option value="es">Español (Spanish)</option>
+                                        <option value="fr">Français (French)</option>
+                                        <option value="de">Deutsch (German)</option>
+                                        <option value="zh-CN">中文 (Chinese)</option>
+                                        <option value="ar">العربية (Arabic)</option>
+                                        <option value="ru">Русский (Russian)</option>
+                                        <option value="pt">Português (Portuguese)</option>
+                                    </optgroup>
                                 </select>
                                 <input type="number" id="aiAcres" placeholder="Acres" value="1" min="1" class="w-full md:w-28 bg-slate-800 text-white rounded-xl p-4 text-sm font-bold border border-slate-700 outline-none text-center">
                             </div>

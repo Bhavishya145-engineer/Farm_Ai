@@ -78,20 +78,10 @@ def estimate_cost(disease: str, stage: str, area_in_acres: float) -> dict:
         "total_cost": f"₹{total_min}–₹{total_max} (for {area_in_acres} acres)"
     }
 
-def generate_voice_base64(text: str, language: str = "en") -> str:
-    # Safely map to gTTS supported languge codes
-    lang_map = {
-        "en": "en",
-        "hi": "hi",
-        "mr": "mr",
-        "te": "te",
-        "ta": "ta"
-    }
-    tts_lang = lang_map.get(language[:2].lower(), "en")
-    
+def generate_voice_base64(text: str, language: str = "hi") -> str:
     try:
-        # Convert the generated text to speech using gTTS
-        tts = gTTS(text=text, lang=tts_lang, slow=False)
+        # Generate TTS using the dynamic exact language requested
+        tts = gTTS(text=text, lang=language, slow=False)
         fp = BytesIO()
         tts.write_to_fp(fp)
         fp.seek(0)
