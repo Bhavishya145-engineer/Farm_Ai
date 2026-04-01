@@ -242,7 +242,13 @@ def _gemini_predict(api_key: str, image_bytes: bytes, crop: str) -> dict:
         except: continue
     
     if not r or r.status_code != 200:
-        raise Exception(f"G-{r.status_code if r else 'Timeout'}")
+        # TIER 1 ALT: Try directly via model ID
+        try:
+           u = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-pro-vision:generateContent?key={api_key}"
+           r = requests.post(u, json=b, timeout=45) 
+        except: pass
+        if not r or r.status_code != 200:
+            raise Exception(f"G-{r.status_code if r else 'Timeout'}")
 
     txt = r.json()["candidates"][0]["content"]["parts"][0]["text"]
     res = _parse_json_safely(txt)
@@ -303,7 +309,8 @@ def _groq_predict(api_key: str, image_bytes: bytes, crop: str) -> dict:
     for m in models:
         payload["model"] = m
         try:
-            r = requests.post(GROQ_URL, json=payload, headers={"Authorization": f"Bearer {api_key}"}, timeout=40)
+            # AI BOOST: Increased timeout for high-latency hackathon conditions
+            r = requests.post(GROQ_URL, json=payload, headers={"Authorization": f"Bearer {api_key}"}, timeout=60)
             if r.status_code == 200: break
         except: continue
 
@@ -453,7 +460,8 @@ def _nvidia_predict(api_key: str, image_bytes: bytes, crop: str) -> dict:
     for m in models:
         payload["model"] = m
         try:
-            r = requests.post(NVIDIA_URL, json=payload, headers={"Authorization": f"Bearer {api_key}"}, timeout=40)
+            # AI BOOST: High-priority vision models deserve more wait time
+            r = requests.post(NVIDIA_URL, json=payload, headers={"Authorization": f"Bearer {api_key}"}, timeout=60)
             if r.status_code == 200: break
         except: continue
 
@@ -652,7 +660,11 @@ def predict_disease_from_image(image_bytes: bytes, crop: str = None, lat: float 
             if best: break
         
         if not best:
+            # AI BOOST: If only one model responded, trust it instead of nulling the result
             best = max(results, key=lambda x: _safe_float(x.get("confidence", 0)))
+            if best.get("confidence", 0) < 0.3:
+               # Deep fallback if even the best says low confidence
+               best = _expert_fallback(image_bytes, c, errs)
 
         # 🚀 FINAL AUTHORITY BRANDING (Mandatory Proof)
         best["disease"] = f"[{SERVER_VERSION}] {best.get('disease','')}"
