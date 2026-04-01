@@ -847,3 +847,33 @@ async def explain_disease(data: Dict[str, Any]):
         stage=data.get("stage") or data.get("severity", "Moderate")
     )
 
+@app.post("/full-explain")
+async def full_explain_disease(data: Dict[str, Any]):
+    from intelligent_assistant import generate_ai_explanation, estimate_cost, generate_voice_base64
+    
+    disease = data.get("disease", "")
+    confidence = float(data.get("confidence", 1.0))
+    stage = data.get("stage") or data.get("severity", "Moderate")
+    area = float(data.get("area", 1.0))
+    language = data.get("language", "hi").lower() # Hindi default!
+    
+    try:
+        # 1. Fetch LLM explanation
+        exp = generate_ai_explanation(disease, confidence, stage, language)
+        
+        # 2. Dynamic Cost Prediction
+        cost_data = estimate_cost(disease, stage, area)
+        exp["cost"] = cost_data["estimated_cost"]
+        exp["total_cost"] = cost_data["total_cost"]
+        
+        # 3. Voice Explanation (TTS) - create a sensible script combining summary and steps
+        actions_txt = ", ".join(exp.get("actions", []))
+        tts_script = f"{exp.get('title', '')}. {exp.get('summary', '')}. Actions you must take: {actions_txt}"
+        exp["audio_url"] = generate_voice_base64(tts_script, language)
+        
+        return exp
+        
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+

@@ -1,110 +1,139 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 
 const FarmerPanel = ({ diseaseData }) => {
   const [explanation, setExplanation] = useState(null);
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState(null);
+  const [language, setLanguage] = useState('hi');
+  const [area, setArea] = useState(1);
+  const [isPlaying, setIsPlaying] = useState(false);
+  const audioRef = useRef(null);
 
   const handleExplain = async () => {
     setLoading(true);
-    setError(null);
+    setExplanation(null);
     try {
-      const response = await fetch('/explain', {
+      const payload = { ...diseaseData, language, area };
+      const response = await fetch('/full-explain', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(diseaseData),
+        body: JSON.stringify(payload),
       });
-      if (!response.ok) throw new Error('Failed to fetch explanation');
       const data = await response.json();
       setExplanation(data);
     } catch (err) {
-      setError(err.message);
+      console.error(err);
+      alert("Uh oh! AI explanation failed. Check network.");
     } finally {
       setLoading(false);
     }
   };
 
-  const getUrgencyColor = (urgency) => {
-    switch (urgency) {
-      case 'Safe': return 'bg-green-500';
-      case 'Needs Attention': return 'bg-yellow-500';
-      case 'Act Now': return 'bg-red-500';
-      default: return 'bg-gray-500';
+  const playVoice = () => {
+    if (explanation?.audio_url) {
+      if (audioRef.current) {
+        audioRef.current.pause();
+      }
+      const audio = new Audio(explanation.audio_url);
+      audioRef.current = audio;
+      
+      audio.onplay = () => setIsPlaying(true);
+      audio.onended = () => setIsPlaying(false);
+      audio.onerror = () => { alert("Voice playback failed."); setIsPlaying(false); };
+      
+      audio.play();
     }
   };
 
   return (
-    <div className="max-w-md mx-auto bg-white rounded-xl shadow-md overflow-hidden md:max-w-2xl m-4 border border-gray-100 p-6">
-      <div className="flex justify-between items-center mb-6">
-        <h2 className="text-2xl font-bold text-gray-800">Farmer Diagnostics</h2>
+    <div className="max-w-md mx-auto bg-green-50 shadow-2xl overflow-hidden md:max-w-xl my-6 rounded-3xl border border-green-200">
+      
+      {/* Top Banner Control Panel */}
+      <div className="bg-white p-6 border-b border-green-100 flex flex-col gap-4">
+        <h2 className="text-3xl font-black text-green-900 tracking-tight text-center">Farming Assistant</h2>
+        
+        <div className="flex gap-2">
+          <select 
+            value={language} 
+            onChange={e => setLanguage(e.target.value)}
+            className="flex-1 bg-green-100 text-green-900 font-bold p-3 rounded-xl outline-none"
+          >
+            <option value="hi">हिंदी (Hindi)</option>
+            <option value="en">English</option>
+            <option value="mr">मराठी (Marathi)</option>
+            <option value="ta">தமிழ் (Tamil)</option>
+            <option value="te">తెలుగు (Telugu)</option>
+          </select>
+          <input 
+            type="number" 
+            min="1" 
+            value={area} 
+            onChange={e => setArea(e.target.value)}
+            className="w-24 bg-green-100 text-green-900 font-bold p-3 rounded-xl outline-none text-center"
+            placeholder="Acres"
+          />
+        </div>
+        
         <button 
-          onClick={handleExplain}
-          disabled={loading || !diseaseData}
-          className="px-4 py-2 bg-green-600 text-white font-semibold rounded-lg shadow-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-400 focus:ring-opacity-75 disabled:opacity-50 transition-colors"
+          onClick={handleExplain} 
+          disabled={loading || !diseaseData} 
+          className="w-full bg-green-600 hover:bg-green-700 active:scale-95 text-white text-xl font-bold py-4 rounded-2xl shadow-lg transition-transform"
         >
-          {loading ? 'Translating...' : 'Explain Simply'}
+          {loading ? '🤖 Analyzing Info...' : 'Get Simple Advice'}
         </button>
       </div>
 
-      {error && <p className="text-red-500 text-sm mb-4">{error}</p>}
-
+      {/* Results View */}
       {explanation && (
-        <div className="space-y-6 animate-fade-in">
-          {/* Header Card */}
-          <div className="p-5 bg-gray-50 rounded-xl border border-gray-200">
-            <div className="flex justify-between items-start mb-2">
-              <h3 className="text-xl font-black text-gray-900">{explanation.title}</h3>
-              <span className={`px-3 py-1 text-xs font-bold text-white rounded-full uppercase tracking-wider ${getUrgencyColor(explanation.urgency)}`}>
-                {explanation.urgency}
-              </span>
-            </div>
-            <p className="text-sm font-semibold text-green-600 mb-3">{explanation.confidence_label}</p>
-            <p className="text-gray-600 text-sm leading-relaxed">{explanation.what_is_this}</p>
+        <div className="p-6 space-y-6">
+          
+          <div className="flex items-center justify-between">
+            <h3 className="text-2xl font-black text-gray-800">{explanation.title}</h3>
+            {explanation.audio_url && (
+              <button 
+                onClick={playVoice} 
+                className={`flex items-center gap-2 px-4 py-2 rounded-full font-bold shadow-md transition-colors ${isPlaying ? 'bg-orange-500 text-white animate-pulse' : 'bg-green-200 text-green-900'}`}
+              >
+                🔊 {isPlaying ? 'Playing...' : 'Listen'}
+              </button>
+            )}
           </div>
 
-          {/* Action List */}
-          <div>
-            <h4 className="flex items-center text-sm font-bold text-gray-800 uppercase tracking-wide mb-3">
-              <span className="w-6 h-6 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center mr-2">✓</span>
-              What to do
-            </h4>
-            <ul className="space-y-2">
+          <p className="text-lg leading-relaxed text-gray-700 font-medium">
+            {explanation.summary}
+          </p>
+
+          <div className="bg-white rounded-2xl p-5 shadow-sm border border-orange-100">
+            <h4 className="text-xl font-bold text-orange-600 flex items-center mb-3">⚠️ What to do now</h4>
+            <ul className="space-y-3">
               {explanation.actions.map((act, i) => (
-                <li key={i} className="flex items-start bg-blue-50/50 p-3 rounded-lg text-sm text-gray-700">
-                  <span className="mr-2 text-blue-500">•</span>
-                  {act}
+                <li key={i} className="flex gap-3 text-gray-700 text-lg">
+                  <span className="text-orange-500 font-bold">✓</span> {act}
                 </li>
               ))}
             </ul>
           </div>
 
-          {/* Grid Layout for Impact & Cost */}
-          <div className="grid grid-cols-2 gap-4">
-            <div className="p-4 bg-orange-50 rounded-xl">
-              <h4 className="text-xs font-bold text-orange-800 uppercase mb-1">Impact</h4>
-              <p className="text-sm text-orange-900">{explanation.impact}</p>
-            </div>
-            <div className="p-4 bg-green-50 rounded-xl">
-              <h4 className="text-xs font-bold text-green-800 uppercase mb-1">Estimated Cost</h4>
-              <p className="text-sm text-green-900 font-medium">{explanation.cost}</p>
-            </div>
+          <div className="bg-white rounded-2xl p-5 shadow-sm border border-blue-100">
+            <h4 className="text-xl font-bold text-blue-600 flex items-center mb-2">🛡️ Precautions</h4>
+            <ul className="space-y-2 text-gray-600 text-lg">
+              {explanation.precautions.map((prec, i) => (
+                <li key={i} className="flex gap-2"><span className="text-blue-400">•</span> {prec}</li>
+              ))}
+            </ul>
           </div>
 
-          {/* Safety */}
-          {explanation.safety && explanation.safety.length > 0 && (
-            <div className="pt-4 border-t border-gray-100">
-              <h4 className="text-xs font-bold text-gray-500 uppercase mb-2">Safety Reminders</h4>
-              <ul className="text-sm text-gray-500 space-y-1">
-                {explanation.safety.map((safe, i) => (
-                  <li key={i} className="flex items-center"><span className="mr-2">⚠️</span>{safe}</li>
-                ))}
-              </ul>
-            </div>
-          )}
+          <div className="bg-green-900 text-green-100 rounded-2xl p-5 shadow-lg relative overflow-hidden">
+             <div className="absolute opacity-10 right-[-10px] top-[-10px] text-8xl">💰</div>
+             <h4 className="text-xl font-bold text-white mb-2 relative z-10">Cost Estimate</h4>
+             <div className="flex flex-col gap-1 relative z-10">
+               <span className="text-green-300">Rate: <strong className="text-white text-lg">{explanation.cost}</strong></span>
+               <span className="text-green-300">Total (for {area} acres): <strong className="text-yellow-400 text-xl">{explanation.total_cost}</strong></span>
+             </div>
+          </div>
+          
         </div>
       )}
     </div>
   );
 };
-
 export default FarmerPanel;
