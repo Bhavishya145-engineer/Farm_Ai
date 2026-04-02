@@ -16,6 +16,7 @@ pandas>=2.2.2
 scikit-learn>=1.5.0
 joblib==1.4.2
 Pillow==10.4.0
+--extra-index-url https://download.pytorch.org/whl/cpu
 torch
 torchvision
 
